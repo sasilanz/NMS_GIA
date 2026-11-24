@@ -18,7 +18,7 @@ Beim **ersten Start** legt die App die Datenbank selbst an: alle 256 Galaxien (N
 
 ### Variante A: Docker (empfohlen, nichts weiter nötig)
 
-Voraussetzung: [Docker Desktop](https://www.docker.com/products/docker-desktop/) (oder Docker Engine mit Compose) ist installiert und gestartet.
+Voraussetzung: [Docker Desktop](https://www.docker.com/products/docker-desktop/) (oder Docker Engine mit Compose) ist installiert und gestartet. Auf dem Mac geht auch [Colima](https://github.com/abiosoft/colima) (`brew install colima docker docker-compose`, dann `colima start`). Das Projekt muss dabei in deinem Home-Ordner liegen, damit der Ordner `data/` auf dem Mac sichtbar ist.
 
 ```
 git clone https://github.com/sasilanz/NMS_GIA.git
