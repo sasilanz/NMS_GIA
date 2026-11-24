@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suche</title>
+<style>
+  :root {
+    {% for name, wert in farben.items() %}--{{ name }}: {{ wert }};
+    {% endfor %}
+    --gelb: #ffd54a;
+    --bg: #1c1d22; --panel: #26272e; --panel2: #2f3039; --text: #f2f2f2; --muted: #9a9ca6; --line: #3a3b44;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 17px/1.4 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; }
+  a { color: inherit; }
+  .leiste { display: flex; gap: 14px; align-items: center; padding: 12px 24px; border-bottom: 1px solid var(--line);
+            position: sticky; top: 0; background: var(--bg); z-index: 5; }
+  .leiste a { text-decoration: none; padding: 7px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); }
+  .leiste a:hover { border-color: var(--text); }
+  main { max-width: 1000px; margin: 0 auto; padding: 24px; }
+  #q { width: 100%; font: inherit; font-size: 28px; padding: 14px 18px; border-radius: 14px; border: 2px solid var(--line);
+       background: var(--panel); color: var(--text); }
+  #q:focus { outline: none; border-color: var(--besucht); }
+  .tipp { color: var(--muted); font-size: 15px; margin: 8px 2px 0; }
+  #zusammen { margin: 18px 2px 6px; color: var(--muted); min-height: 24px; }
+  h2 { font-size: 15px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 26px 0 8px; font-weight: 600; }
+
+  .treffer { display: block; text-decoration: none; background: var(--panel); border: 1px solid var(--line);
+             border-left: 6px solid var(--line); border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; }
+  .treffer:hover { border-color: var(--text); background: var(--panel2); }
+  .treffer.eintrag { border-left-color: #6fb7ff; } .treffer.system { border-left-color: #b79bff; }
+  .treffer.galaxie { border-left-color: var(--normal); }
+  .treffer.allianz-eigene { border-left-color: var(--gelb); }
+  .titel { font-size: 20px; font-weight: 600; }
+  .pfad { margin-top: 3px; color: var(--muted); font-size: 15px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .pfad .trenn { opacity: .5; }
+  .punkt { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+  .punkt.lush { background: var(--lush); } .punkt.normal { background: var(--normal); } .punkt.harsh { background: var(--harsh); }
+  .punkt.empty { background: var(--empty); } .punkt.ohne-typ { background: var(--ohne-typ); }
+  .abz { font-size: 13px; padding: 1px 9px; border: 1px solid var(--line); border-radius: 999px; color: var(--text); white-space: nowrap; }
+  .abz.al { border-color: var(--gelb); color: var(--gelb); }
+  .abz.besucht { border-color: var(--besucht); color: var(--besucht); }
+  .auszug { margin-top: 6px; color: #cfd0d8; font-size: 15px; }
+  .woher { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  mark { background: #ffd54a; color: #14151a; border-radius: 3px; padding: 0 2px; }
+  .leer { color: var(--muted); padding: 28px; border: 1px dashed var(--line); border-radius: 12px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="leiste">
+  <a href="/">← Raster</a>
+  {% if eigene_allianz %}<a href="/allianz" style="border-color:#ffd54a; color:#ffd54a">★ {{ eigene_allianz.name }}</a>{% endif %}
+</div>
+<main>
+  <input id="q" type="search" placeholder="Basis, Planet, System, Galaxie, Notiz …" autocomplete="off" autofocus value="{{ q }}">
+  <div class="tipp">Mehrere Wörter schränken ein („ezd insel“). Groß/Klein ist egal, bei Umlauten geht „ü“ wie „u“ und „ue“. Gesucht wird in Namen, Planeten und Notizen, auch in den alten Texten der Galaxie-Notizen.</div>
+  <div id="zusammen"></div>
+  <div id="ergebnis"></div>
+</main>
+<script>
+const q = document.getElementById('q'), erg = document.getElementById('ergebnis'), zus = document.getElementById('zusammen');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// gleiche Faltung wie auf dem Server: Akzente weg, klein, Länge bleibt gleich
+const fold = s => Array.from(s).map(c => c === 'ß' ? 's' : (c.normalize('NFKD')[0] || c).toLowerCase()).join('');
+const ERSATZ = { ae: 'a', oe: 'o', ue: 'u', ss: 's' };
+const varianten = w => [...new Set([w, w.replace(/ae|oe|ue|ss/g, m => ERSATZ[m])])];
+
+function markiere(text, woerter) {
+  text = String(text ?? ''); if (!text) return '';
+  const f = fold(text), markiert = new Array(text.length).fill(false);
+  for (const w of woerter) { let i = f.indexOf(w); while (i >= 0 && w) { for (let k = i; k < i + w.length; k++) markiert[k] = true; i = f.indexOf(w, i + 1); } }
+  let aus = '', offen = false;
+  for (let i = 0; i < text.length; i++) {
+    if (markiert[i] && !offen) { aus += '<mark>'; offen = true; }
+    if (!markiert[i] && offen) { aus += '</mark>'; offen = false; }
+    aus += esc(text[i]);
+  }
+  return aus + (offen ? '</mark>' : '');
+}
+
+function karte(t, w) {
+  const dot = `<span class="punkt ${t.galaxy_klasse}"></span>`;
+  const galaxie = `<span>${dot}${t.galaxy_nr} ${markiere(t.galaxy_name, w)}</span>`;
+  const woher = t.treffer_in.length ? `<div class="woher">Treffer in: ${t.treffer_in.join(', ')}</div>` : '';
+  const auszug = t.auszug ? `<div class="auszug">${markiere(t.auszug, w)}</div>` : '';
+  if (t.art === 'eintrag') {
+    const al = t.allianz ? `<span class="abz al">${t.eigene ? '★ ' : ''}${markiere(t.allianz, w)}</span>` : '';
+    const planet = t.planet ? `<span class="trenn">›</span><span>Planet ${markiere(t.planet, w)}</span>` : '';
+    return `<a class="treffer eintrag${t.eigene ? ' allianz-eigene' : ''}" href="/galaxy/${t.galaxy_nr}#e${t.id}">
+      <div class="titel">${markiere(t.titel, w)} <span class="abz">${esc(t.typ)}</span> ${al}</div>
+      <div class="pfad">${galaxie}<span class="trenn">›</span><span>System ${markiere(t.system_name, w)}</span>${planet}</div>${auszug}${woher}</a>`;
+  }
+  if (t.art === 'system') {
+    return `<a class="treffer system" href="/galaxy/${t.galaxy_nr}#s${t.id}">
+      <div class="titel">${markiere(t.titel, w)} <span class="abz">System</span></div>
+      <div class="pfad">${galaxie}</div>${auszug}${woher}</a>`;
+  }
+  const kz = t.kuerzel ? `<span class="abz">${markiere(t.kuerzel, w)}</span>` : '';
+  const b = t.besucht ? '<span class="abz besucht">✓ besucht</span>' : '';
+  return `<a class="treffer galaxie" href="/galaxy/${t.galaxy_nr}">
+    <div class="titel">${dot}${t.galaxy_nr} ${markiere(t.titel, w)} ${kz} ${b}</div>${auszug}${woher}</a>`;
+}
+
+let anfrageNr = 0, timer;
+async function suchen() {
+  const text = q.value.trim(), mein = ++anfrageNr;
+  history.replaceState(null, '', text ? '/suche?q=' + encodeURIComponent(text) : '/suche');
+  if (!text) { erg.innerHTML = ''; zus.textContent = ''; return; }
+  const r = await fetch('/api/suche?q=' + encodeURIComponent(text));
+  if (mein !== anfrageNr) return;           // veraltete Antwort ignorieren
+  const j = await r.json();
+  const w = fold(text).split(/\s+/).filter(Boolean).flatMap(varianten);
+  if (!j.gesamt) { zus.textContent = ''; erg.innerHTML = '<div class="leer">Nichts gefunden für „' + esc(text) + '“.</div>'; return; }
+  const gruppen = [['eintrag', 'Einträge (Basen, Stationen …)'], ['system', 'Systeme'], ['galaxie', 'Galaxien']];
+  zus.textContent = j.gesamt + ' Treffer' + (j.gesamt > j.treffer.length ? ' (die ersten ' + j.treffer.length + ' werden angezeigt)' : '');
+  erg.innerHTML = gruppen.map(([art, titel]) => {
+    const liste = j.treffer.filter(t => t.art === art);
+    return liste.length ? `<h2>${titel} · ${liste.length}</h2>` + liste.map(t => karte(t, w)).join('') : '';
+  }).join('');
+}
+q.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(suchen, 120); });
+q.setSelectionRange(q.value.length, q.value.length);
+suchen();
+</script>
+</body>
+</html>

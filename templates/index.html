@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NMS Galaxien</title>
+<style>
+  :root {
+    {% for name, wert in farben.items() %}--{{ name }}: {{ wert }};
+    {% endfor %}
+    --k: 270px; --bg: #1c1d22; --panel: #26272e; --text: #f2f2f2; --muted: #9a9ca6; --line: #3a3b44;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 17px/1.35 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; }
+  header { position: sticky; top: 0; z-index: 5; background: var(--bg);
+           padding: 14px 20px 10px; border-bottom: 1px solid var(--line); }
+  .zeile1 { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  h1 { font-size: 22px; margin: 0; white-space: nowrap; }
+  #suche { flex: 1; min-width: 260px; max-width: 520px; font-size: 24px; padding: 12px 16px;
+           border-radius: 10px; border: 2px solid var(--line); background: var(--panel); color: var(--text); }
+  #suche:focus { outline: none; border-color: var(--besucht); }
+  #info { color: var(--muted); white-space: nowrap; }
+  .groesse { display: flex; align-items: center; gap: 8px; color: var(--muted); margin-left: auto; }
+  .groesse input { width: 140px; accent-color: var(--besucht); }
+  #ergebnis { font-size: 22px; margin: 8px 0 0; min-height: 24px; }
+  #ergebnis b.ja { color: var(--besucht); } #ergebnis b.nein { color: var(--muted); }
+  .filter { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
+  .filter .gruppe { display: flex; gap: 6px; align-items: center; padding-right: 14px;
+                    margin-right: 6px; border-right: 1px solid var(--line); }
+  .filter .gruppe:last-child { border: 0; }
+  .chip { cursor: pointer; user-select: none; border: 1px solid var(--line); background: var(--panel);
+          color: var(--text); padding: 7px 15px; border-radius: 999px; font-size: 17px; }
+  .chip.an { border-color: var(--text); font-weight: 600; }
+  .chip .punkt { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+  #raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--k), 1fr));
+            gap: 12px; padding: 20px 20px 50px; }
+  .kachel { position: relative; color: #14151a; border-radius: 14px; font-size: calc(var(--k) * 0.088);
+            padding: 0.7em 0.8em; min-height: calc(var(--k) * 0.52); border: 4px solid transparent; }
+  .kachel.lush { background: var(--lush); } .kachel.normal { background: var(--normal); }
+  .kachel.harsh { background: var(--harsh); } .kachel.empty { background: var(--empty); }
+  .kachel.ohne-typ { background: var(--ohne-typ); }
+  .kachel.besucht { border-color: var(--besucht); box-shadow: 0 0 0 3px var(--besucht), inset 0 0 0 2px #fff6; }
+  .kachel .nr { font-weight: 400; font-size: 0.95em; line-height: 1.1; opacity: .7; margin-bottom: 0.5em; }
+  .kachel .name { font-size: 1.2em; line-height: 1.2; margin-top: 0.2em; word-break: break-word; }
+  .kachel .kz { font-size: 0.9em; opacity: .7; margin-top: 0.2em; }
+  .kachel .hotg { position: absolute; left: 0.6em; bottom: 0.5em; font-size: 0.8em; font-weight: 700;
+                  background: #14151ad0; color: #ffd54a; border-radius: 999px; padding: 1px 8px; }
+  .kachel .zaehler { position: absolute; right: 0.6em; bottom: 0.5em; font-size: 0.9em; font-weight: 700;
+                     background: #14151ad0; color: #fff; border-radius: 999px; padding: 1px 8px; }
+  .haken { position: absolute; top: 0.5em; right: 0.5em; width: 2.2em; height: 2.2em; border-radius: 50%;
+           border: 2px solid #14151a66; background: #fff9; color: transparent; cursor: pointer;
+           font-size: 1em; line-height: 1; text-align: center; padding: 0; }
+  .haken:hover { border-color: #14151a; background: #fff; }
+  .besucht .haken { background: var(--besucht); border-color: #14151a; color: #14151a; font-weight: 800; }
+  .kachel { cursor: pointer; }
+  .kachel:hover { filter: brightness(1.06); transform: translateY(-1px); }
+  .neu-knopf { cursor: pointer; font: inherit; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line);
+               background: var(--panel); color: var(--text); }
+  .neu-knopf:hover { border-color: var(--text); }
+  .versteckt { display: none; }
+  #leer { padding: 40px 20px; color: var(--muted); display: none; }
+</style>
+</head>
+<body>
+<header>
+  <div class="zeile1">
+    <h1>NMS Galaxien</h1>
+    {% if eigene_allianz %}<a class="neu-knopf" href="/allianz" style="text-decoration:none; border-color:#ffd54a; color:#ffd54a" title="Meine eigene Allianz">★ {{ eigene_allianz.name }}</a>{% endif %}
+    <input id="suche" type="search" placeholder="Nummer, Name oder Kürzel …" autocomplete="off" autofocus>
+    <span id="info"></span>
+    <a id="reset" href="#" style="display:none; color:var(--besucht); white-space:nowrap" title="Suche und alle Filter zurücksetzen">✕ Filter zurücksetzen</a>
+    <a class="neu-knopf" href="/allianzen" style="text-decoration:none" title="Alle Allianzen, auch fremde">🤝 Allianzen</a>
+    <a class="neu-knopf" href="/hotg" style="text-decoration:none" title="Alle HotG-Hubs, auch in noch nicht besuchten Galaxien">🚀 HotG-Hubs</a>
+    <a class="neu-knopf" href="/suche" id="suche-link" style="text-decoration:none" title="In Basen, Systemen, Planeten und Notizen suchen">🔍 Alles durchsuchen</a>
+    {% if aufraeumen_offen %}<a class="neu-knopf" href="/aufraeumen" style="text-decoration:none" title="Galaxien mit altem Freitext in der Notiz">Aufräumen ({{ aufraeumen_offen }})</a>{% endif %}
+    <a class="neu-knopf" href="/export" style="text-decoration:none" title="Sicherung der Daten">Sicherung</a>
+    <label class="groesse">Kachelgröße <input id="groesse" type="range" min="160" max="460" step="10" value="270"></label>
+  </div>
+  <div id="ergebnis"></div>
+  <div id="global" style="margin-top:4px; min-height:0"></div>
+  <div class="filter">
+    <div class="gruppe" id="f-typ">
+      <span class="chip" data-typ="lush"><span class="punkt" style="background:var(--lush)"></span>Lush</span>
+      <span class="chip" data-typ="normal"><span class="punkt" style="background:var(--normal)"></span>Normal</span>
+      <span class="chip" data-typ="harsh"><span class="punkt" style="background:var(--harsh)"></span>Harsh</span>
+      <span class="chip" data-typ="empty"><span class="punkt" style="background:var(--empty)"></span>Empty</span>
+    </div>
+    <div class="gruppe" id="f-besucht">
+      <span class="chip" data-b="alle">alle</span>
+      <span class="chip" data-b="ja">besucht</span>
+      <span class="chip" data-b="nein">nicht besucht</span>
+    </div>
+    <div class="gruppe">
+      <span class="chip" id="f-basis">hat Basis / Station</span>
+      <select class="chip" id="f-allianz" title="Nur Galaxien mit einer Station dieser Allianz">
+        <option value="">Allianz-Station …</option>
+        <option value="irgend">irgendeine Allianz</option>
+        {% for a in allianzen %}<option value="{{ a.id }}">{% if a.eigene %}★ {% endif %}{{ a.name }}</option>{% endfor %}
+      </select>
+      <span class="chip" id="f-hotg" title="Galaxien mit HotG-Hub (Liste aus dem NMS-Wiki)">🚀 HotG-Hub</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="raster">
+    {% for g in galaxien %}
+    <div class="kachel {{ g.klasse }}{% if g.besucht %} besucht{% endif %}"
+         data-nr="{{ g.nr }}" data-name="{{ g.name|lower }}" data-kz="{{ (g.kuerzel or '')|lower }}"
+         data-typ="{{ g.klasse }}" data-eintraege="{{ g.eintraege }}" data-hotg="{{ 1 if g.hotg else 0 }}" data-al=",{{ g.allianzen }},">
+      <button class="haken" type="button" title="Besucht umschalten">✓</button>
+      <div class="nr">{{ g.nr }}</div>
+      <div class="name">{{ g.name }}</div>
+      {% if g.kuerzel %}<div class="kz">{{ g.kuerzel }}</div>{% endif %}
+      {% if g.hotg %}<span class="hotg" title="Hier gibt es einen HotG-Hub">HotG</span>{% endif %}
+      {% if g.eintraege %}<span class="zaehler" title="Einträge (Basen, Stationen …)">⌂ {{ g.eintraege }}</span>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  <div id="leer">Keine Galaxie gefunden.</div>
+</main>
+
+<script>
+const kacheln = [...document.querySelectorAll('.kachel')];
+const suche = document.getElementById('suche');
+const info = document.getElementById('info');
+const ergebnis = document.getElementById('ergebnis');
+const leer = document.getElementById('leer');
+const filter = { typ: new Set(), b: 'alle', basis: false, hotg: false, al: '' };  // b: 'alle' | 'ja' | 'nein'
+
+function passt(k, q, mitBesucht) {
+  const d = k.dataset;
+  if (q && !(/^\d+$/.test(q) ? d.nr === q : (d.name.includes(q) || d.kz.includes(q)))) return false;
+  if (filter.typ.size && !filter.typ.has(d.typ)) return false;
+  if (mitBesucht && filter.b === 'ja' && !k.classList.contains('besucht')) return false;
+  if (mitBesucht && filter.b === 'nein' && k.classList.contains('besucht')) return false;
+  if (filter.basis && +d.eintraege === 0) return false;
+  if (filter.hotg && d.hotg !== '1') return false;
+  if (filter.al === 'irgend' && d.al === ',,') return false;
+  if (filter.al && filter.al !== 'irgend' && !d.al.includes(',' + filter.al + ',')) return false;
+  return true;
+}
+function filtern() {
+  const q = suche.value.trim().toLowerCase();
+  let sichtbar = kacheln.filter(k => passt(k, q, true));
+  // Schnellcheck „War ich schon dort?“: Findet die Suche unter den besuchten nichts, werden die Treffer
+  // trotz Filter „besucht“ gezeigt, sonst sähe man bei einer nicht besuchten Galaxie nur „nichts gefunden“.
+  let ausserhalb = false;
+  if (!sichtbar.length && q && filter.b === 'ja') {
+    const alle = kacheln.filter(k => passt(k, q, false));
+    if (alle.length) { sichtbar = alle; ausserhalb = true; }
+  }
+  const zeigen = new Set(sichtbar);
+  for (const k of kacheln) k.classList.toggle('versteckt', !zeigen.has(k));
+  info.textContent = sichtbar.length + ' von ' + kacheln.length;
+  document.getElementById('reset').style.display = (q || filter.typ.size || filter.b !== 'alle' || filter.basis || filter.hotg || filter.al) ? '' : 'none';
+  speichern();
+  leer.style.display = sichtbar.length ? 'none' : 'block';
+  // Schnellcheck: genau ein Treffer -> Status groß anzeigen
+  if (sichtbar.length === 1 && q) {
+    const k = sichtbar[0], b = k.classList.contains('besucht'), n = +k.dataset.eintraege;
+    ergebnis.innerHTML = '#' + k.dataset.nr + ' ' + k.querySelector('.name').textContent + ': ' +
+      (b ? '<b class="ja">✓ schon besucht</b>' : '<b class="nein">noch nicht besucht</b>') +
+      (n ? ' · ' + n + ' Eintrag/Einträge' : '') + (k.dataset.hotg === '1' ? ' · 🚀 HotG-Hub vorhanden' : '');
+  } else ergebnis.textContent = '';
+  // Hinweis: dasselbe in Basen, Systemen, Planeten und Notizen suchen
+  const g = document.getElementById('global');
+  g.innerHTML = q ? '<a href="/suche?q=' + encodeURIComponent(suche.value.trim()) + '" style="color:var(--muted)">' +
+    '🔍 „' + suche.value.trim().replace(/[<>&"]/g, '') + '“ auch in Basen, Systemen, Planeten und Notizen suchen →</a>' : '';
+  if (ausserhalb) g.innerHTML = '<span style="color:var(--besucht)">Keine besuchte Galaxie passt. Gezeigt werden die Treffer trotz Filter „besucht“.</span><br>' + g.innerHTML;
+}
+
+suche.addEventListener('input', filtern);
+// Escape leert die Suche und setzt den Fokus zurück
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { suche.value = ''; filtern(); suche.focus(); }
+  else if (document.activeElement === document.body && e.key.length === 1 && !e.metaKey && !e.ctrlKey) suche.focus();
+});
+
+document.getElementById('f-typ').addEventListener('click', e => {
+  const c = e.target.closest('.chip'); if (!c) return;
+  const t = c.dataset.typ; filter.typ.has(t) ? filter.typ.delete(t) : filter.typ.add(t);
+  c.classList.toggle('an'); filtern();
+});
+document.getElementById('f-besucht').addEventListener('click', e => {
+  const c = e.target.closest('.chip'); if (!c) return;
+  setzeBesucht(c.dataset.b); filtern();
+});
+document.getElementById('f-basis').addEventListener('click', e => {
+  filter.basis = !filter.basis; e.currentTarget.classList.toggle('an', filter.basis); filtern();
+});
+
+document.getElementById('f-allianz').addEventListener('change', e => {
+  filter.al = e.target.value; e.target.classList.toggle('an', !!filter.al); filtern();
+});
+document.getElementById('f-hotg').addEventListener('click', e => {
+  filter.hotg = !filter.hotg; e.currentTarget.classList.toggle('an', filter.hotg); filtern();
+});
+
+// Klick auf die Kachel öffnet die Galaxie, Klick auf das Häkchen schaltet besucht um
+document.getElementById('raster').addEventListener('click', async e => {
+  const knopf = e.target.closest('.haken');
+  if (!knopf) {
+    const kachel = e.target.closest('.kachel');
+    if (kachel) location.href = '/galaxy/' + kachel.dataset.nr;
+    return;
+  }
+  const k = knopf.closest('.kachel');
+  const r = await fetch('/api/galaxy/' + k.dataset.nr + '/besucht', { method: 'POST' });
+  if (!r.ok) { alert('Speichern fehlgeschlagen'); return; }
+  const j = await r.json();
+  k.classList.toggle('besucht', j.besucht);
+  filtern();
+});
+
+// Kachelgröße per Regler, wird im Browser gemerkt
+const regler = document.getElementById('groesse');
+try { const gespeichert = localStorage.getItem('nms-kachel'); if (gespeichert) regler.value = gespeichert; } catch (e) {}
+function groesse() {
+  document.documentElement.style.setProperty('--k', regler.value + 'px');
+  try { localStorage.setItem('nms-kachel', regler.value); } catch (e) {}
+}
+regler.addEventListener('input', groesse);
+groesse();
+
+// Filterstand merken: Chips im Browser (bleiben auch nach Schließen), Suchtext und Scrollposition
+// nur für diesen Tab (damit eine neue Sitzung mit leerem Suchfeld startet)
+// Auswahl „alle / besucht / nicht besucht“: immer genau eines ist aktiv
+function setzeBesucht(wert) {
+  filter.b = ['ja', 'nein'].includes(wert) ? wert : 'alle';
+  document.querySelectorAll('#f-besucht .chip').forEach(x => x.classList.toggle('an', x.dataset.b === filter.b));
+}
+function speichern() {
+  try {
+    localStorage.setItem('nms-filter', JSON.stringify({ typ: [...filter.typ], b: filter.b, basis: filter.basis, hotg: filter.hotg, al: filter.al }));
+    sessionStorage.setItem('nms-suche', suche.value);
+  } catch (e) {}
+}
+function wiederherstellen() {
+  try {
+    const f = JSON.parse(localStorage.getItem('nms-filter') || 'null');
+    if (!f) {  // erster Start: nur besuchte Galaxien zeigen
+      setzeBesucht('ja');
+    } else {
+      setzeBesucht(f.b);
+      for (const t of f.typ || []) { filter.typ.add(t); document.querySelector('#f-typ [data-typ="' + t + '"]')?.classList.add('an'); }
+      if (f.basis) { filter.basis = true; document.getElementById('f-basis').classList.add('an'); }
+      if (f.al && document.querySelector('#f-allianz option[value="' + f.al + '"]')) {
+        filter.al = f.al; const sel = document.getElementById('f-allianz'); sel.value = f.al; sel.classList.add('an');
+      }
+      if (f.hotg) { filter.hotg = true; document.getElementById('f-hotg').classList.add('an'); }
+    }
+    suche.value = sessionStorage.getItem('nms-suche') || '';
+  } catch (e) {}
+}
+document.getElementById('reset').addEventListener('click', e => {
+  e.preventDefault();
+  filter.typ.clear(); filter.basis = false; filter.hotg = false; filter.al = ''; document.getElementById('f-allianz').value = ''; suche.value = '';
+  document.querySelectorAll('.chip.an').forEach(c => c.classList.remove('an'));
+  setzeBesucht('alle');
+  filtern(); suche.focus();
+});
+window.addEventListener('pagehide', () => { try { sessionStorage.setItem('nms-scroll', String(window.scrollY)); } catch (e) {} });
+
+wiederherstellen();
+filtern();
+try { const y = +sessionStorage.getItem('nms-scroll'); if (y) requestAnimationFrame(() => window.scrollTo(0, y)); } catch (e) {}
+</script>
+</body>
+</html>

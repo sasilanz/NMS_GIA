@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Allianz {{ daten.allianz.name }}</title>
+<style>
+  :root {
+    {% for name, wert in farben.items() %}--{{ name }}: {{ wert }};
+    {% endfor %}
+    --gelb: #ffd54a;
+    --bg: #1c1d22; --panel: #26272e; --panel2: #2f3039; --text: #f2f2f2; --muted: #9a9ca6; --line: #3a3b44;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 17px/1.4 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; }
+  a { color: inherit; }
+  .leiste { display: flex; gap: 14px; align-items: center; padding: 12px 24px; border-bottom: 1px solid var(--line);
+            position: sticky; top: 0; background: var(--bg); z-index: 5; }
+  .leiste a { text-decoration: none; padding: 7px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); }
+  .leiste a:hover { border-color: var(--text); }
+  .leiste a.aktiv { border-color: var(--gelb); color: var(--gelb); }
+  .leiste .platz { flex: 1; }
+  #status { color: var(--muted); min-width: 130px; text-align: right; }
+  #status.ok { color: #7be08a; } #status.fehler { color: #ff8a7a; font-weight: 600; }
+  main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+  .kopf { background: var(--panel); border: 1px solid var(--line); border-left: 8px solid var(--besucht);
+          border-radius: 16px; padding: 18px 24px 22px; }
+  .kopf.eigene { border-left-color: var(--gelb); }
+  .kopf .zeile { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .kopf select.wechsel { width: auto; min-width: 200px; font-size: 17px; }
+  .kopf .marke { font-size: 15px; color: var(--gelb); font-weight: 600; }
+  #name { font-size: 30px; font-weight: 600; flex: 1; min-width: 240px; }
+  #notiz { margin-top: 12px; min-height: 60px; resize: vertical; }
+  .knopf { font: inherit; cursor: pointer; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line);
+           background: var(--panel); color: var(--text); }
+  .knopf:hover { border-color: var(--text); }
+  .knopf.klein { padding: 4px 12px; font-size: 15px; }
+  .knopf.gefahr:hover { border-color: #ff6a55; color: #ff9a8a; }
+  input, select, textarea { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line);
+                            border-radius: 8px; padding: 8px 12px; min-width: 0; width: 100%; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--besucht); }
+
+  .werkzeug { display: flex; gap: 16px; align-items: center; margin: 28px 0 12px; flex-wrap: wrap; }
+  .werkzeug h2 { margin: 0; font-size: 22px; }
+  #filter { max-width: 340px; font-size: 19px; }
+  #zaehler { color: var(--muted); }
+
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border-radius: 12px; overflow: hidden; }
+  th { text-align: left; font-size: 14px; color: var(--muted); font-weight: 600; padding: 10px 14px; background: var(--panel2); }
+  td { padding: 11px 14px; border-top: 1px solid var(--line); vertical-align: top; }
+  tr.station:hover td { background: #ffffff0a; }
+  td.galaxie a { text-decoration: none; font-weight: 600; }
+  td.galaxie a:hover { text-decoration: underline; }
+  td.galaxie .nr { color: var(--muted); font-weight: 400; margin-right: 6px; }
+  td .typ { font-size: 14px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line); white-space: nowrap; }
+  td.name { font-weight: 600; }
+  td.notiz { color: var(--muted); white-space: pre-wrap; }
+  .leer { color: var(--muted); padding: 24px; border: 1px dashed var(--line); border-radius: 12px; }
+  .unten { margin: 40px 0 20px; padding-top: 20px; border-top: 1px solid var(--line); display: flex; gap: 12px; flex-wrap: wrap; }
+  .hinweis { color: var(--muted); font-size: 15px; margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="leiste">
+  <a href="/">← Raster</a>
+  <a href="/suche" title="In allem suchen">🔍 Suche</a>
+  <a href="/allianzen" title="Alle Allianzen">🤝 Alle Allianzen</a>
+  {% if eigene_allianz %}<a class="aktiv" href="/allianz" title="Meine eigene Allianz">★ {{ eigene_allianz.name }}</a>{% endif %}
+  <span class="platz"></span>
+  <span id="status"></span>
+</div>
+
+<main>
+  <section class="kopf{% if daten.allianz.eigene %} eigene{% endif %}" id="kopf">
+    <div class="zeile">
+      <select class="wechsel" id="wechsel" title="Allianz wechseln">
+        {% for a in daten.alle %}
+        <option value="{{ a.id }}"{% if a.id == daten.allianz.id %} selected{% endif %}>{% if a.eigene %}★ {% endif %}{{ a.name }} ({{ a.anzahl }})</option>
+        {% endfor %}
+      </select>
+      <button class="knopf" id="neue-allianz">+ Allianz</button>
+      {% if daten.allianz.eigene %}<span class="marke">★ meine eigene Allianz</span>{% endif %}
+    </div>
+    <div class="zeile" style="margin-top:14px">
+      <input id="name" data-feld="name">
+    </div>
+    <textarea id="notiz" data-feld="notiz" placeholder="Notiz zur Allianz …"></textarea>
+  </section>
+
+  <div class="werkzeug">
+    <h2>Stationen</h2>
+    <input id="filter" type="search" placeholder="Suchen: Galaxie, System, Name, Planet …" autocomplete="off">
+    <span id="zaehler"></span>
+  </div>
+
+  {% if daten.stationen %}
+  <table>
+    <thead><tr><th>Galaxie</th><th>System</th><th>Typ</th><th>Name</th><th>Planet</th><th>Notiz</th></tr></thead>
+    <tbody id="liste">
+      {% for s in daten.stationen %}
+      <tr class="station">
+        <td class="galaxie"><a href="/galaxy/{{ s.galaxy_nr }}" title="Galaxie öffnen und bearbeiten"><span class="nr">{{ s.galaxy_nr }}</span>{{ s.galaxy_name }}</a></td>
+        <td>{{ s.system_name }}</td>
+        <td><span class="typ">{{ s.typ }}</span></td>
+        <td class="name">{{ s.name }}</td>
+        <td>{{ s.planet or '' }}</td>
+        <td class="notiz">{{ s.notiz or '' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="leer" id="nichts" style="display:none; margin-top:12px">Keine Treffer.</div>
+  <p class="hinweis">Bearbeiten: auf die Galaxie klicken, dort stehen alle Systeme und Einträge.</p>
+  {% else %}
+  <div class="leer">
+    Noch keine Stationen in dieser Allianz.<br>
+    Öffne eine Galaxie, lege ein System an und wähle bei einem Eintrag diese Allianz aus.
+    Mit „+ Raumstation ({{ eigene_allianz.name if eigene_allianz else 'Allianz' }})“ geht es für die eigene Allianz direkt.
+  </div>
+  {% endif %}
+
+  <div class="unten">
+    {% if not daten.allianz.eigene %}
+    <button class="knopf klein" id="als-eigene">★ Als meine eigene Allianz festlegen</button>
+    <button class="knopf klein gefahr" id="loeschen">Allianz löschen …</button>
+    {% else %}
+    <span class="hinweis">Die eigene Allianz lässt sich nicht löschen. Zum Wechseln eine andere Allianz öffnen und dort „Als meine eigene Allianz festlegen“ wählen.</span>
+    {% endif %}
+  </div>
+</main>
+
+<script>
+const AL = {{ daten.allianz|tojson }};
+const $ = id => document.getElementById(id);
+let statusTimer;
+function zeigeStatus(text, art) {
+  const s = $('status'); s.textContent = text; s.className = art || '';
+  clearTimeout(statusTimer);
+  if (art === 'ok') statusTimer = setTimeout(() => { s.textContent = ''; s.className = ''; }, 2000);
+}
+async function api(methode, url, daten) {
+  zeigeStatus('speichert …');
+  try {
+    const r = await fetch(url, { method: methode, headers: { 'Content-Type': 'application/json' },
+                                 body: daten === undefined ? undefined : JSON.stringify(daten) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.fehler || ('Fehler ' + r.status));
+    zeigeStatus('✓ gespeichert', 'ok');
+    return j;
+  } catch (e) { zeigeStatus('⚠ ' + e.message, 'fehler'); return null; }
+}
+
+// Name und Notiz speichern (Name ändert auch die Auswahlliste, daher danach neu laden)
+for (const el of document.querySelectorAll('[data-feld]')) {
+  el.value = AL[el.dataset.feld] ?? '';
+  el.addEventListener('change', async () => {
+    const feld = el.dataset.feld;
+    const neu = await api('PATCH', '/api/allianz/' + AL.id, { [feld]: el.value });
+    if (neu) { AL[feld] = neu[feld]; el.value = neu[feld] ?? ''; if (feld === 'name') location.reload(); }
+    else el.value = AL[feld] ?? '';
+  });
+}
+
+$('wechsel').addEventListener('change', e => { location.href = '/allianz/' + e.target.value; });
+
+$('neue-allianz').addEventListener('click', async () => {
+  const name = prompt('Name der neuen Allianz:');
+  if (!name || !name.trim()) return;
+  const neu = await api('POST', '/api/allianz', { name });
+  if (neu) location.href = '/allianz/' + neu.id;
+});
+
+const eigeneKnopf = $('als-eigene');
+if (eigeneKnopf) eigeneKnopf.addEventListener('click', async () => {
+  if (!confirm('„' + AL.name + '“ als meine eigene Allianz festlegen?')) return;
+  if (await api('POST', '/api/allianz/' + AL.id + '/eigene')) location.reload();
+});
+const loeschKnopf = $('loeschen');
+if (loeschKnopf) loeschKnopf.addEventListener('click', async () => {
+  if (!confirm('Allianz „' + AL.name + '“ löschen?\n\nDie Stationen bleiben in ihren Galaxien erhalten, gehören dann aber keiner Allianz mehr.')) return;
+  if (await api('DELETE', '/api/allianz/' + AL.id)) location.href = '/allianz';
+});
+
+// Filter in der Liste
+const zeilen = [...document.querySelectorAll('tr.station')];
+function filtern() {
+  const q = $('filter').value.trim().toLowerCase();
+  let n = 0;
+  for (const z of zeilen) { const ok = !q || z.textContent.toLowerCase().includes(q); z.style.display = ok ? '' : 'none'; if (ok) n++; }
+  $('zaehler').textContent = zeilen.length ? n + ' von ' + zeilen.length : '';
+  if ($('nichts')) $('nichts').style.display = zeilen.length && !n ? 'block' : 'none';
+}
+$('filter').addEventListener('input', filtern);
+filtern();
+</script>
+</body>
+</html>

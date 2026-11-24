@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aufräumen</title>
+<style>
+  :root {
+    {% for name, wert in farben.items() %}--{{ name }}: {{ wert }};
+    {% endfor %}
+    --gelb: #ffd54a;
+    --bg: #1c1d22; --panel: #26272e; --panel2: #2f3039; --text: #f2f2f2; --muted: #9a9ca6; --line: #3a3b44;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 17px/1.4 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; }
+  a { color: inherit; }
+  .leiste { display: flex; gap: 14px; align-items: center; padding: 12px 24px; border-bottom: 1px solid var(--line);
+            position: sticky; top: 0; background: var(--bg); z-index: 5; }
+  .leiste a { text-decoration: none; padding: 7px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); }
+  .leiste a:hover { border-color: var(--text); }
+  main { max-width: 1000px; margin: 0 auto; padding: 24px; }
+  h1 { margin: 6px 0 8px; font-size: 26px; }
+  .muted { color: var(--muted); font-size: 15px; }
+  .fortschritt { margin: 18px 0 6px; font-size: 20px; }
+  .fortschritt b { color: var(--besucht); }
+  .balken { height: 10px; background: var(--panel); border-radius: 999px; overflow: hidden; border: 1px solid var(--line); }
+  .balken div { height: 100%; background: var(--besucht); }
+  .werkzeug { display: flex; gap: 14px; align-items: center; margin: 22px 0 10px; flex-wrap: wrap; }
+  #filter { max-width: 320px; font: inherit; font-size: 18px; padding: 8px 14px; border-radius: 10px;
+            border: 1px solid var(--line); background: var(--panel); color: var(--text); width: 100%; }
+  #filter:focus { outline: none; border-color: var(--besucht); }
+  .chip { cursor: pointer; user-select: none; border: 1px solid var(--line); background: var(--panel); color: var(--text);
+          padding: 6px 14px; border-radius: 999px; font-size: 16px; }
+  .chip.an { border-color: var(--text); font-weight: 600; }
+
+  .karte { background: var(--panel); border: 1px solid var(--line); border-left: 8px solid var(--line); border-radius: 12px;
+           padding: 14px 18px; margin-bottom: 10px; display: grid; grid-template-columns: 1fr auto; gap: 8px 18px; align-items: start; }
+  .karte.lush { border-left-color: var(--lush); } .karte.normal { border-left-color: var(--normal); }
+  .karte.harsh { border-left-color: var(--harsh); } .karte.empty { border-left-color: var(--empty); }
+  .karte .kopf { font-size: 20px; font-weight: 600; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .karte .kopf .nr { color: var(--muted); font-weight: 400; }
+  .abz { font-size: 13px; padding: 1px 9px; border: 1px solid var(--line); border-radius: 999px; font-weight: 400; white-space: nowrap; }
+  .abz.besucht { border-color: var(--besucht); color: var(--besucht); }
+  .abz.gelb { border-color: var(--gelb); color: var(--gelb); }
+  .text { grid-column: 1; }
+  .zeile { margin: 4px 0; display: flex; gap: 10px; align-items: baseline; }
+  .zeile .spalte { flex: none; width: 140px; font-size: 13px; color: var(--muted); text-align: right; }
+  .zeile .inhalt { flex: 1; font-size: 18px; white-space: pre-wrap; }
+  .oeffnen { grid-column: 2; grid-row: 1 / span 2; align-self: center; text-decoration: none; padding: 10px 20px;
+             border: 2px solid var(--besucht); border-radius: 999px; font-weight: 600; white-space: nowrap; }
+  .oeffnen:hover { background: var(--besucht); color: #14151a; }
+  .fertig { text-align: center; padding: 50px 20px; font-size: 22px; border: 1px dashed var(--line); border-radius: 14px; }
+</style>
+</head>
+<body>
+<div class="leiste">
+  <a href="/">← Raster</a>
+  <a href="/suche">🔍 Suche</a>
+  {% if eigene_allianz %}<a href="/allianz" style="border-color:#ffd54a; color:#ffd54a">★ {{ eigene_allianz.name }}</a>{% endif %}
+</div>
+<main>
+  <h1>Aufräumen</h1>
+  <p class="muted">Diese Galaxien haben noch den alten Freitext aus der Numbers-Liste in der Notiz. Öffne eine Galaxie,
+     lege daraus Systeme und Einträge an (die Platzhalter in den Namensfeldern zeigen das Schema <em>Kürzel + Typ + Merkmal</em>) und lösche danach
+     die erledigten Zeilen aus der Notiz. Sobald kein alter Text mehr drinsteht, verschwindet die Galaxie aus dieser Liste.
+     Den Rest der Notiz kannst du behalten.</p>
+
+  {% set offen_n = offen|length %}
+  <div class="fortschritt"><b>{{ offen_n }}</b> Galaxien noch offen{% if mit_systemen %} · bei <b>{{ mit_systemen }}</b> sind schon Systeme angelegt{% endif %}</div>
+
+  {% if offen %}
+  <div class="werkzeug">
+    <input id="filter" type="search" placeholder="In den alten Texten suchen …" autocomplete="off">
+    <span class="chip" id="nur-leer" title="Nur Galaxien, in denen noch gar nichts angelegt ist">noch ohne Systeme</span>
+    <span class="chip" id="nur-besucht">besucht</span>
+    <span class="muted" id="zaehler"></span>
+  </div>
+  <div id="liste">
+    {% for g in offen %}
+    <div class="karte {{ g.klasse }}" data-systeme="{{ g.systeme }}" data-besucht="{{ g.besucht }}">
+      <div class="kopf"><span class="nr">{{ g.nr }}</span> {{ g.name }}
+        {% if g.kuerzel %}<span class="abz">{{ g.kuerzel }}</span>{% endif %}
+        {% if g.besucht %}<span class="abz besucht">✓ besucht</span>{% endif %}
+        {% if g.systeme %}<span class="abz gelb">{{ g.systeme }} System(e), {{ g.eintraege }} Eintrag/Einträge schon angelegt</span>{% endif %}
+      </div>
+      <a class="oeffnen" href="/galaxy/{{ g.nr }}">Öffnen →</a>
+      <div class="text">
+        {% for spalte, inhalt in g.zeilen %}
+        <div class="zeile"><span class="spalte">{{ spalte }}</span><span class="inhalt">{{ inhalt }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="fertig">🎉 Alles aufgeräumt. In keiner Galaxie steht noch alter Freitext.</div>
+  {% endif %}
+</main>
+<script>
+const karten = [...document.querySelectorAll('.karte')];
+const f = document.getElementById('filter');
+if (f) {
+  const leer = document.getElementById('nur-leer'), bes = document.getElementById('nur-besucht'), z = document.getElementById('zaehler');
+  const fold = s => Array.from(s).map(c => c === 'ß' ? 's' : (c.normalize('NFKD')[0] || c).toLowerCase()).join('');
+  function filtern() {
+    const w = fold(f.value.trim()).split(/\s+/).filter(Boolean);
+    let n = 0;
+    for (const k of karten) {
+      const t = fold(k.textContent);
+      const ok = w.every(x => t.includes(x)) && (!leer.classList.contains('an') || k.dataset.systeme === '0')
+                 && (!bes.classList.contains('an') || k.dataset.besucht === '1');
+      k.style.display = ok ? '' : 'none'; if (ok) n++;
+    }
+    z.textContent = n + ' von ' + karten.length;
+  }
+  f.addEventListener('input', filtern);
+  for (const c of [leer, bes]) c.addEventListener('click', () => { c.classList.toggle('an'); filtern(); });
+  filtern();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Allianzen</title>
+<style>
+  :root {
+    {% for name, wert in farben.items() %}--{{ name }}: {{ wert }};
+    {% endfor %}
+    --gelb: #ffd54a;
+    --bg: #1c1d22; --panel: #26272e; --panel2: #2f3039; --text: #f2f2f2; --muted: #9a9ca6; --line: #3a3b44;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 17px/1.4 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; }
+  a { color: inherit; }
+  .leiste { display: flex; gap: 14px; align-items: center; padding: 12px 24px; border-bottom: 1px solid var(--line);
+            position: sticky; top: 0; background: var(--bg); z-index: 5; flex-wrap: wrap; }
+  .leiste a { text-decoration: none; padding: 7px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); }
+  .leiste a:hover { border-color: var(--text); }
+  .leiste a.aktiv { border-color: var(--gelb); color: var(--gelb); }
+  #status { margin-left: auto; color: var(--muted); }
+  #status.fehler { color: #ff8a7a; font-weight: 600; }
+  main { max-width: 1000px; margin: 0 auto; padding: 24px; }
+  h1 { margin: 0 0 6px; font-size: 28px; }
+  .sub { color: var(--muted); margin-bottom: 20px; }
+  .karten { display: grid; gap: 12px; }
+  a.karte { display: grid; grid-template-columns: 1fr auto; gap: 4px 20px; align-items: center; text-decoration: none;
+            background: var(--panel); border: 1px solid var(--line); border-left: 8px solid var(--besucht);
+            border-radius: 14px; padding: 16px 22px; }
+  a.karte.eigene { border-left-color: var(--gelb); }
+  a.karte:hover { border-color: var(--text); }
+  .karte .name { font-size: 22px; font-weight: 600; }
+  .karte .eig { color: var(--gelb); font-size: 15px; font-weight: 600; margin-left: 10px; }
+  .karte .zahlen { text-align: right; color: var(--muted); }
+  .karte .zahlen b { color: var(--text); font-size: 20px; }
+  .karte .notiz { grid-column: 1 / -1; color: var(--muted); font-size: 15px; white-space: pre-wrap; }
+  .knopf { font: inherit; cursor: pointer; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line);
+           background: var(--panel); color: var(--text); margin-bottom: 18px; }
+  .knopf:hover { border-color: var(--text); }
+</style>
+</head>
+<body>
+<div class="leiste">
+  <a href="/">← Raster</a>
+  <a href="/suche" title="In allem suchen">🔍 Suche</a>
+  <a class="aktiv" href="/allianzen">🤝 Allianzen</a>
+  <a href="/hotg">🚀 HotG-Hubs</a>
+  <span id="status"></span>
+</div>
+<main>
+  <h1>🤝 Allianzen</h1>
+  <div class="sub">Hier siehst du alle Allianzen, deren Raumstationen du erfasst hast. Eine Station einer fremden Allianz legst du in
+    der Galaxie an (Eintrag vom Typ Raumstation, dort die Allianz wählen oder hier vorher anlegen).</div>
+  <button class="knopf" id="neue-allianz">+ Allianz</button>
+  <div class="karten">
+    {% for a in allianzen %}
+    <a class="karte{% if a.eigene %} eigene{% endif %}" href="/allianz/{{ a.id }}">
+      <div><span class="name">{{ a.name }}</span>{% if a.eigene %}<span class="eig">★ meine eigene</span>{% endif %}</div>
+      <div class="zahlen"><b>{{ a.stationen }}</b> Station{{ '' if a.stationen == 1 else 'en' }} in <b>{{ a.galaxien }}</b> Galaxie{{ '' if a.galaxien == 1 else 'n' }}</div>
+      {% if a.notiz %}<div class="notiz">{{ a.notiz }}</div>{% endif %}
+    </a>
+    {% endfor %}
+  </div>
+</main>
+<script>
+document.getElementById('neue-allianz').addEventListener('click', async () => {
+  const name = prompt('Name der neuen Allianz:');
+  if (!name || !name.trim()) return;
+  const r = await fetch('/api/allianz', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const s = document.getElementById('status'); s.className = 'fehler'; s.textContent = '⚠ ' + (j.fehler || 'Fehler'); return; }
+  location.href = '/allianz/' + j.id;
+});
+</script>
+</body>
+</html>

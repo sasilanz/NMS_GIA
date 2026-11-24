@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Galaxie {{ daten.galaxy.nr }} – {{ daten.galaxy.name }}</title>
+<style>
+  :root {
+    {% for name, wert in farben.items() %}--{{ name }}: {{ wert }};
+    {% endfor %}
+    --bg: #1c1d22; --panel: #26272e; --panel2: #2f3039; --text: #f2f2f2; --muted: #9a9ca6; --line: #3a3b44;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 17px/1.4 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; }
+  a { color: inherit; }
+  .leiste { display: flex; gap: 14px; align-items: center; padding: 12px 24px; border-bottom: 1px solid var(--line);
+            position: sticky; top: 0; background: var(--bg); z-index: 5; }
+  .leiste a { text-decoration: none; padding: 7px 14px; border: 1px solid var(--line); border-radius: 999px;
+              background: var(--panel); }
+  .leiste a:hover { border-color: var(--text); }
+  .leiste .platz { flex: 1; }
+  #status { color: var(--muted); min-width: 130px; text-align: right; }
+  #status.ok { color: #7be08a; } #status.fehler { color: #ff8a7a; font-weight: 600; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+  .kopf { border-radius: 16px; padding: 20px 24px 24px; color: #14151a; border: 4px solid transparent; }
+  .kopf.lush { background: var(--lush); } .kopf.normal { background: var(--normal); }
+  .kopf.harsh { background: var(--harsh); } .kopf.empty { background: var(--empty); }
+  .kopf.ohne-typ { background: var(--ohne-typ); }
+  .kopf.besucht { border-color: var(--besucht); box-shadow: 0 0 0 4px var(--besucht); }
+  .kopf h1 { margin: 0 0 14px; font-size: 20px; font-weight: 600; opacity: .75; display: flex; gap: 12px; align-items: center; }
+  .grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 14px; }
+  label.feld { display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 600; opacity: .85; }
+  label.feld.voll { grid-column: 1 / -1; }
+  .kopf input, .kopf select, .kopf textarea {
+    font: inherit; font-weight: 400; color: #14151a; background: #ffffffd9; border: 2px solid #14151a33;
+    border-radius: 10px; padding: 9px 12px; width: 100%; }
+  .kopf input:focus, .kopf select:focus, .kopf textarea:focus { outline: none; border-color: #14151a; background: #fff; }
+  #name { font-size: 28px; font-weight: 600; }
+  textarea { resize: vertical; min-height: 110px; }
+  .besucht-knopf { font: inherit; font-weight: 700; font-size: 18px; border-radius: 12px; cursor: pointer; padding: 11px 16px;
+                   border: 2px solid #14151a; background: #ffffffd9; color: #14151a; }
+  .besucht-knopf.an { background: var(--besucht); }
+
+  h2 { font-size: 22px; margin: 34px 0 12px; display: flex; align-items: center; gap: 14px; }
+  .knopf { font: inherit; cursor: pointer; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line);
+           background: var(--panel); color: var(--text); }
+  .knopf:hover { border-color: var(--text); }
+  .knopf.gefahr:hover { border-color: #ff6a55; color: #ff9a8a; }
+  .knopf.klein { padding: 4px 12px; font-size: 15px; }
+  .leer { color: var(--muted); padding: 18px; border: 1px dashed var(--line); border-radius: 12px; }
+
+  .system { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; margin-bottom: 18px; overflow: hidden; }
+  .system > .syskopf { display: flex; gap: 10px; align-items: center; padding: 12px 14px; background: var(--panel2); flex-wrap: wrap; }
+  .system input.sysname { flex: 1; min-width: 200px; font-size: 20px; font-weight: 600; }
+  .sysattr { display: flex; gap: 14px; flex-wrap: wrap; padding: 10px 14px 0; }
+  .sysattr label { display: flex; flex-direction: column; font-size: 13px; color: var(--muted); gap: 3px; }
+  .sysattr select { width: auto; min-width: 150px; font-size: 16px; }
+  .eintrag .ohne-planet { grid-column: span 2; }
+  .system .sysnotiz { margin: 10px 14px 4px; width: calc(100% - 28px); min-height: 0; height: 44px; }
+  .eintraege { padding: 8px 14px 14px; display: grid; gap: 10px; }
+  .eintrag { display: grid; grid-template-columns: 150px 1fr 1fr 190px auto; gap: 10px; align-items: start;
+             background: var(--bg); border: 1px solid var(--line); border-left: 6px solid var(--line);
+             border-radius: 10px; padding: 10px; }
+  .eintrag.allianz { border-left-color: var(--besucht); }
+  .eintrag.eigene { border-left-color: #ffd54a; }
+  .eintrag .notiz { grid-column: 2 / 5; min-height: 0; height: 44px; }
+  .eintrag .abzeichen { grid-column: 1; font-size: 13px; color: var(--muted); align-self: center; }
+  .eintrag .loeschen { grid-row: 1; grid-column: 5; }
+  .eintraege .zeile-knoepfe { display: flex; gap: 8px; }
+  .treffer { outline: 3px solid #ffd54a; box-shadow: 0 0 0 7px #ffd54a44; }
+  .alwrap { display: flex; flex-direction: column; gap: 4px; }
+  .allink { font-size: 14px; color: var(--muted); }
+  .allink:hover { color: var(--text); }
+
+  input, select, textarea { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line);
+                            border-radius: 8px; padding: 7px 10px; min-width: 0; width: 100%; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--besucht); }
+  .gefahr-bereich { margin: 50px 0 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } .eintrag { grid-template-columns: 1fr 1fr; }
+                              .eintrag .notiz { grid-column: 1 / -1; } .eintrag .loeschen { grid-column: 2; grid-row: auto; } }
+</style>
+</head>
+<body>
+<div class="leiste">
+  <a href="/">← Raster</a>
+  <a href="/suche" title="In allem suchen">🔍 Suche</a>
+  <a href="/allianzen" title="Alle Allianzen">🤝 Allianzen</a>
+  <a href="/hotg" title="Alle HotG-Hubs">🚀 HotG</a>
+  {% if eigene_allianz %}<a href="/allianz" style="border-color:#ffd54a; color:#ffd54a" title="Meine eigene Allianz">★ {{ eigene_allianz.name }}</a>{% endif %}
+  <a id="vor" href="{% if daten.vorher %}/galaxy/{{ daten.vorher }}{% else %}#{% endif %}" title="vorherige Galaxie">‹ {{ daten.vorher or '' }}</a>
+  <a id="nach" href="{% if daten.nachher %}/galaxy/{{ daten.nachher }}{% else %}#{% endif %}" title="nächste Galaxie">{{ daten.nachher or '' }} ›</a>
+  <span class="platz"></span>
+  <span id="status"></span>
+</div>
+
+<main>
+  {% if daten.hotg %}
+  <div style="margin-bottom:14px; padding:12px 18px; border:1px solid #ffd54a; border-radius:12px; background:var(--panel)">
+    🚀 <b style="color:#ffd54a">HotG-Hub:</b> {{ daten.hotg.system }}
+    {% if daten.hotg.glyphen %}· Portal <code style="letter-spacing:.12em">{{ daten.hotg.glyphen }}</code>{% endif %}
+    {% if daten.hotg.zugang %}· <span style="color:var(--muted)">{{ daten.hotg.zugang }}</span>{% endif %}
+    {% if daten.hotg.entdeckt_von %}<span style="color:var(--muted)">· entdeckt von {{ daten.hotg.entdeckt_von }}</span>{% endif %}
+  </div>
+  {% endif %}
+  <section class="kopf" id="kopf">
+    <h1>Galaxie <span id="nr">{{ daten.galaxy.nr }}</span></h1>
+    <div class="grid">
+      <label class="feld">Name <input id="name" data-feld="name"></label>
+      <label class="feld">Kürzel <input id="kuerzel" data-feld="kuerzel" placeholder="z. B. EZD"></label>
+      <label class="feld">Typ
+        <select id="typ" data-feld="typ">
+          <option value="">– unbekannt –</option>
+          {% for t in galaxie_typen %}<option>{{ t }}</option>{% endfor %}
+        </select></label>
+      <label class="feld">Bewertung
+        <select id="bewertung" data-feld="bewertung">
+          <option value="">–</option>
+          {% for i in range(1, 6) %}<option value="{{ i }}">{{ '★' * i }}</option>{% endfor %}
+        </select></label>
+      <label class="feld voll">Notiz
+        <textarea id="notiz" data-feld="notiz" placeholder="Woran erkenne ich die Galaxie, Besonderheiten …"></textarea></label>
+      <div><button type="button" class="besucht-knopf" id="besucht"></button></div>
+    </div>
+  </section>
+
+  <h2>Systeme und Einträge <button class="knopf" id="neues-system">+ System</button></h2>
+  <div id="baum"></div>
+
+  <div class="gefahr-bereich">
+    <button class="knopf gefahr klein" id="galaxie-loeschen">Galaxie löschen …</button>
+  </div>
+</main>
+
+<script>
+const START = {{ daten|tojson }};
+const NR = START.galaxy.nr;
+const EINTRAG_TYPEN = {{ eintrag_typen|tojson }};
+const LEBENSFORMEN = {{ lebensformen|tojson }};
+const STUFEN = { wealth: ['niedrig', 'mittel', 'hoch'], konflikt: ['niedrig', 'mittel', 'hoch'] };
+let galaxy = START.galaxy, systeme = START.systeme, allianzen = START.allianzen;
+const eigene = allianzen.find(a => a.eigene);
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// ---- Speichern -------------------------------------------------------------
+let statusTimer;
+function zeigeStatus(text, art) {
+  const s = $('status'); s.textContent = text; s.className = art || '';
+  clearTimeout(statusTimer);
+  if (art === 'ok') statusTimer = setTimeout(() => { s.textContent = ''; s.className = ''; }, 2000);
+}
+async function api(methode, url, daten) {
+  zeigeStatus('speichert …');
+  try {
+    const r = await fetch(url, { method: methode, headers: { 'Content-Type': 'application/json' },
+                                 body: daten === undefined ? undefined : JSON.stringify(daten) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.fehler || ('Fehler ' + r.status));
+    zeigeStatus('✓ gespeichert', 'ok');
+    return j;
+  } catch (e) {
+    zeigeStatus('⚠ ' + e.message, 'fehler');
+    return null;
+  }
+}
+
+// ---- Kopf ------------------------------------------------------------------
+const TYP_KLASSE = { Lush: 'lush', Normal: 'normal', Harsh: 'harsh', Empty: 'empty' };
+function kopfZeichnen() {
+  $('kopf').className = 'kopf ' + (TYP_KLASSE[galaxy.typ] || 'ohne-typ') + (galaxy.besucht ? ' besucht' : '');
+  const b = $('besucht'); b.classList.toggle('an', !!galaxy.besucht);
+  b.textContent = galaxy.besucht ? '✓ Besucht' : 'Noch nicht besucht';
+  document.title = 'Galaxie ' + galaxy.nr + ' – ' + galaxy.name;
+}
+for (const el of document.querySelectorAll('[data-feld]')) {
+  el.value = galaxy[el.dataset.feld] ?? '';
+  el.addEventListener('change', async () => {
+    const feld = el.dataset.feld;
+    const neu = await api('PATCH', '/api/galaxy/' + NR, { [feld]: el.value });
+    if (neu) { galaxy = { ...galaxy, ...neu, besucht: !!neu.besucht }; el.value = galaxy[feld] ?? ''; kopfZeichnen(); }
+    else el.value = galaxy[feld] ?? '';
+  });
+}
+$('besucht').addEventListener('click', async () => {
+  const neu = await api('PATCH', '/api/galaxy/' + NR, { besucht: !galaxy.besucht });
+  if (neu) { galaxy.besucht = !!neu.besucht; kopfZeichnen(); }
+});
+$('galaxie-loeschen').addEventListener('click', async () => {
+  const n = systeme.reduce((a, s) => a + s.eintraege.length, 0);
+  if (!confirm('Galaxie ' + NR + ' „' + galaxy.name + '“ wirklich löschen?' +
+               (systeme.length ? '\n\nDabei gehen auch ' + systeme.length + ' System(e) und ' + n + ' Eintrag/Einträge verloren.' : ''))) return;
+  if (await api('DELETE', '/api/galaxy/' + NR)) location.href = '/';
+});
+
+// ---- Baum ------------------------------------------------------------------
+function allianzOptionen(gewaehlt) {
+  return '<option value="">keine (persönlich)</option>' +
+    allianzen.map(a => `<option value="${a.id}"${a.id === gewaehlt ? ' selected' : ''}>${a.eigene ? '★ ' : ''}${esc(a.name)}</option>`).join('');
+}
+function eintragHtml(e) {
+  const al = allianzen.find(a => a.id === e.allianz_id);
+  const klasse = al ? (al.eigene ? ' allianz eigene' : ' allianz') : '';
+  const kz = galaxy.kuerzel || 'KZ';
+  return `<div class="eintrag${klasse}" data-eid="${e.id}">
+    <select data-ef="typ">${EINTRAG_TYPEN.map(t => `<option${t === e.typ ? ' selected' : ''}>${t}</option>`).join('')}</select>
+    ${e.typ === 'Raumstation'
+      ? `<input class="ohne-planet" data-ef="name" value="${esc(e.name)}" placeholder="${esc(kz)} ${esc(e.typ)} Merkmal">`
+      : `<input data-ef="name" value="${esc(e.name)}" placeholder="${esc(kz)} ${esc(e.typ)} Merkmal">
+    <input data-ef="planet" value="${esc(e.planet)}" placeholder="Planet">`}
+    <div class="alwrap"><select data-ef="allianz_id">${allianzOptionen(e.allianz_id)}</select>${al ? `<a class="allink" href="/allianz/${al.id}">Allianz öffnen →</a>` : ''}</div>
+    <button class="knopf klein gefahr loeschen" data-aktion="eintrag-loeschen" title="Eintrag löschen">✕</button>
+    <textarea class="notiz" data-ef="notiz" placeholder="Woran erkenne ich den Ort?">${esc(e.notiz)}</textarea>
+  </div>`;
+}
+function systemHtml(s) {
+  const kz = galaxy.kuerzel || 'KZ';
+  return `<div class="system" data-sid="${s.id}">
+    <div class="syskopf">
+      <input class="sysname" data-sf="name" value="${esc(s.name)}" placeholder="${esc(kz)} Merkname">
+      <button class="knopf klein" data-aktion="eintrag-neu" data-typ="Basis">+ Basis / Eintrag</button>
+      ${eigene ? `<button class="knopf klein" data-aktion="eintrag-neu" data-typ="Raumstation" data-eigene="1">+ Raumstation (${esc(eigene.name)})</button>` : ''}
+      <button class="knopf klein gefahr" data-aktion="system-loeschen" title="System löschen">✕ System</button>
+    </div>
+    <div class="sysattr">
+      <label>Lebensform <select data-sf="lebensform"><option value="">–</option>${LEBENSFORMEN.map(l => `<option${l === s.lebensform ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>
+      <label>Wealth <select data-sf="wealth"><option value="">–</option>${STUFEN.wealth.map((t, i) => `<option value="${i + 1}"${s.wealth === i + 1 ? ' selected' : ''}>${i + 1} (${t})</option>`).join('')}</select></label>
+      <label>Konflikt <select data-sf="konflikt"><option value="">–</option>${STUFEN.konflikt.map((t, i) => `<option value="${i + 1}"${s.konflikt === i + 1 ? ' selected' : ''}>${i + 1} (${t})</option>`).join('')}</select></label>
+    </div>
+    <textarea class="sysnotiz" data-sf="notiz" placeholder="Notiz zum System">${esc(s.notiz)}</textarea>
+    <div class="eintraege">${s.eintraege.length ? s.eintraege.map(eintragHtml).join('') : '<div class="leer">Noch keine Einträge in diesem System.</div>'}</div>
+  </div>`;
+}
+function baumZeichnen() {
+  $('baum').innerHTML = systeme.length ? systeme.map(systemHtml).join('')
+    : '<div class="leer">Noch keine Systeme. Mit „+ System“ legst du das erste an.</div>';
+}
+const finde = {
+  system: id => systeme.find(s => s.id === id),
+  eintrag: id => { for (const s of systeme) { const e = s.eintraege.find(x => x.id === id); if (e) return [s, e]; } return []; },
+};
+
+$('baum').addEventListener('change', async ev => {
+  const el = ev.target;
+  const sysEl = el.closest('.system'); if (!sysEl) return;
+  const sid = +sysEl.dataset.sid;
+  const eEl = el.closest('.eintrag');
+  if (eEl) {
+    const eid = +eEl.dataset.eid, feld = el.dataset.ef; if (!feld) return;
+    const wert = feld === 'allianz_id' ? (el.value === '' ? null : +el.value) : el.value;
+    const neu = await api('PATCH', '/api/eintrag/' + eid, { [feld]: wert });
+    const [s, e] = finde.eintrag(eid);
+    if (neu && e) Object.assign(e, neu);
+    if (feld === 'typ' || feld === 'allianz_id' || !neu) eEl.outerHTML = eintragHtml(e);
+    else el.value = e[feld] ?? '';
+  } else if (el.dataset.sf) {
+    const neu = await api('PATCH', '/api/system/' + sid, { [el.dataset.sf]: el.value });
+    const s = finde.system(sid);
+    if (neu && s) Object.assign(s, neu);
+    el.value = s[el.dataset.sf] ?? '';
+  }
+});
+
+$('baum').addEventListener('click', async ev => {
+  const knopf = ev.target.closest('[data-aktion]'); if (!knopf) return;
+  const sysEl = knopf.closest('.system'), sid = +sysEl.dataset.sid, s = finde.system(sid);
+  const aktion = knopf.dataset.aktion;
+  if (aktion === 'eintrag-neu') {
+    const typ = knopf.dataset.typ;
+    const kz = galaxy.kuerzel ? galaxy.kuerzel + ' ' : '';
+    const neu = await api('POST', '/api/system/' + sid + '/eintrag',
+      { typ, name: kz + typ, allianz_id: knopf.dataset.eigene ? eigene.id : null });
+    if (neu) { s.eintraege.push(neu); sysEl.outerHTML = systemHtml(s);
+      const neuEl = document.querySelector(`[data-eid="${neu.id}"] [data-ef="name"]`); if (neuEl) { neuEl.focus(); neuEl.select(); } }
+  } else if (aktion === 'eintrag-loeschen') {
+    const eid = +knopf.closest('.eintrag').dataset.eid, [, e] = finde.eintrag(eid);
+    if (!confirm('Eintrag „' + e.name + '“ löschen?')) return;
+    if (await api('DELETE', '/api/eintrag/' + eid)) { s.eintraege = s.eintraege.filter(x => x.id !== eid); sysEl.outerHTML = systemHtml(s); }
+  } else if (aktion === 'system-loeschen') {
+    if (!confirm('System „' + s.name + '“ löschen?' + (s.eintraege.length ? '\n\nDabei gehen auch ' + s.eintraege.length + ' Eintrag/Einträge verloren.' : ''))) return;
+    if (await api('DELETE', '/api/system/' + sid)) { systeme = systeme.filter(x => x.id !== sid); baumZeichnen(); }
+  }
+});
+
+$('neues-system').addEventListener('click', async () => {
+  const neu = await api('POST', '/api/galaxy/' + NR + '/system', { name: (galaxy.kuerzel ? galaxy.kuerzel + ' ' : '') + 'Neues System' });
+  if (neu) { systeme.push(neu); baumZeichnen();
+    const el = document.querySelector(`[data-sid="${neu.id}"] [data-sf="name"]`); if (el) { el.focus(); el.select(); } }
+});
+
+kopfZeichnen(); baumZeichnen();
+
+// Sprung aus der Suche: #e12 = Eintrag 12, #s3 = System 3, wird kurz gelb umrandet
+(function zumTreffer() {
+  const m = location.hash.match(/^#([es])(\d+)$/); if (!m) return;
+  const el = document.querySelector(m[1] === 'e' ? `[data-eid="${m[2]}"]` : `[data-sid="${m[2]}"]`);
+  if (!el) return;
+  el.scrollIntoView({ block: 'center' });
+  el.classList.add('treffer');
+  setTimeout(() => el.classList.remove('treffer'), 4000);
+})();
+</script>
+</body>
+</html>

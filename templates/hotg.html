@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HotG-Hubs</title>
+<style>
+  :root {
+    {% for name, wert in farben.items() %}--{{ name }}: {{ wert }};
+    {% endfor %}
+    --gelb: #ffd54a;
+    --bg: #1c1d22; --panel: #26272e; --panel2: #2f3039; --text: #f2f2f2; --muted: #9a9ca6; --line: #3a3b44;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 17px/1.4 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; }
+  a { color: inherit; }
+  .leiste { display: flex; gap: 14px; align-items: center; padding: 12px 24px; border-bottom: 1px solid var(--line);
+            position: sticky; top: 0; background: var(--bg); z-index: 5; flex-wrap: wrap; }
+  .leiste a { text-decoration: none; padding: 7px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); }
+  .leiste a:hover { border-color: var(--text); }
+  .leiste a.aktiv { border-color: var(--gelb); color: var(--gelb); }
+  main { max-width: 1300px; margin: 0 auto; padding: 24px; }
+  h1 { margin: 0 0 6px; font-size: 28px; }
+  .sub { color: var(--muted); margin-bottom: 18px; }
+  .sub a { color: var(--gelb); }
+  .werkzeug { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+  #suche { font: inherit; font-size: 19px; padding: 9px 14px; width: 320px; border-radius: 10px;
+           border: 2px solid var(--line); background: var(--panel); color: var(--text); }
+  #suche:focus { outline: none; border-color: var(--besucht); }
+  .chip { cursor: pointer; user-select: none; border: 1px solid var(--line); background: var(--panel);
+          color: var(--text); padding: 7px 15px; border-radius: 999px; font: inherit; }
+  .chip.an { border-color: var(--text); font-weight: 600; }
+  #zaehler { color: var(--muted); margin-left: auto; }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border-radius: 12px; overflow: hidden; }
+  th { text-align: left; font-size: 14px; color: var(--muted); font-weight: 600; padding: 10px 14px; background: var(--panel2); }
+  td { padding: 10px 14px; border-top: 1px solid var(--line); vertical-align: middle; }
+  tr:hover td { background: #ffffff0a; }
+  tr.versteckt { display: none; }
+  .galpunkt { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+  .lush { background: var(--lush); } .normal { background: var(--normal); } .harsh { background: var(--harsh); }
+  .empty { background: var(--empty); } .ohne-typ { background: var(--ohne-typ); }
+  td.gal a { text-decoration: none; font-weight: 600; }
+  td.gal a:hover { text-decoration: underline; }
+  td.gal .nr { color: var(--muted); font-weight: 400; margin-right: 6px; }
+  .status { font-size: 14px; padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
+  .status.ja { background: var(--besucht); color: #14151a; font-weight: 700; }
+  .status.nein { border: 1px solid var(--line); color: var(--muted); }
+  code { font: 16px ui-monospace, Menlo, monospace; letter-spacing: .12em; }
+  .kopieren { font: inherit; font-size: 14px; cursor: pointer; margin-left: 8px; padding: 2px 10px; border-radius: 999px;
+              border: 1px solid var(--line); background: var(--panel2); color: var(--text); }
+  .kopieren:hover { border-color: var(--text); }
+  .muted { color: var(--muted); }
+  .leer { display: none; color: var(--muted); padding: 24px; }
+</style>
+</head>
+<body>
+<div class="leiste">
+  <a href="/">← Raster</a>
+  <a href="/suche" title="In allem suchen">🔍 Suche</a>
+  {% if eigene_allianz %}<a href="/allianz" style="border-color:#ffd54a; color:#ffd54a" title="Meine eigene Allianz">★ {{ eigene_allianz.name }}</a>{% endif %}
+  <a href="/allianzen">🤝 Allianzen</a>
+  <a class="aktiv" href="/hotg">🚀 HotG-Hubs</a>
+</div>
+<main>
+  <h1>🚀 Hitchhikers of the Galaxy: alle Hubs</h1>
+  <div class="sub">{{ hubs|length }} Hubs in {{ gesamt }} Galaxien, auch in Galaxien, die du noch nicht besucht hast.
+    Quelle: <a href="{{ quelle }}" target="_blank" rel="noopener">NMS-Wiki</a>, Stand {{ stand or 'unbekannt' }}.
+    Portal-Adresse in der jeweiligen Galaxie benutzen.
+    <button class="chip" id="aktualisieren" type="button" style="margin-left:10px" title="Liste jetzt frisch aus dem Wiki holen">↻ Von Fandom aktualisieren</button>
+    <span id="aktmeldung" style="margin-left:8px"></span></div>
+  <div class="werkzeug">
+    <input id="suche" type="search" placeholder="Nummer, Galaxie, System, Entdecker …" autocomplete="off" autofocus>
+    <span id="f-besucht" style="display:flex; gap:6px">
+      <button class="chip" data-b="alle" type="button">alle</button>
+      <button class="chip" data-b="nein" type="button">nicht besucht ({{ hubs|rejectattr('besucht')|list|length }})</button>
+      <button class="chip" data-b="ja" type="button">besucht ({{ hubs|selectattr('besucht')|list|length }})</button>
+    </span>
+    <span id="zaehler"></span>
+  </div>
+  <table>
+    <thead><tr><th>Nr.</th><th>Galaxie</th><th>Status</th><th>Hub-System</th><th>Portal-Glyphen (hex)</th><th>Entdeckt von</th><th>Eigene Einträge</th></tr></thead>
+    <tbody id="tab">
+    {% for h in hubs %}
+      <tr data-nr="{{ h.nr }}" data-b="{{ 'ja' if h.besucht else 'nein' }}"
+          data-text="{{ (h.nr ~ ' ' ~ h.name ~ ' ' ~ (h.kuerzel or '') ~ ' ' ~ h.system ~ ' ' ~ (h.entdeckt_von or ''))|lower }}">
+        <td class="muted">{{ h.nr }}</td>
+        <td class="gal"><span class="galpunkt {{ h.klasse }}"></span><a href="/galaxy/{{ h.nr }}">{{ h.name }}</a></td>
+        <td><span class="status {{ 'ja' if h.besucht else 'nein' }}">{{ '✓ besucht' if h.besucht else 'nicht besucht' }}</span></td>
+        <td>{{ h.system }}</td>
+        <td>{% if h.glyphen %}<code>{{ h.glyphen }}</code><button class="kopieren" type="button" data-kopie="{{ h.glyphen }}">kopieren</button>
+            {% elif h.zugang %}<span class="muted" title="{{ h.zugang }}">Geheimes System (Discord), siehe Galaxie</span>{% endif %}</td>
+        <td class="muted">{{ h.entdeckt_von or '–' }}</td>
+        <td>{% if h.eintraege %}⌂ {{ h.eintraege }}{% else %}<span class="muted">–</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <div class="leer" id="leer">Keine Hubs gefunden.</div>
+</main>
+<script>
+const zeilen = [...document.querySelectorAll('#tab tr')];
+const suche = document.getElementById('suche');
+let b = 'alle';
+try { b = localStorage.getItem('nms-hotg-b') || 'alle'; } catch (e) {}
+function filtern() {
+  const q = suche.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  let n = 0;
+  for (const z of zeilen) {
+    const ok = (b === 'alle' || z.dataset.b === b) &&
+      q.every(w => /^\d+$/.test(w) ? z.dataset.nr === w || z.dataset.text.includes(w) : z.dataset.text.includes(w));
+    z.classList.toggle('versteckt', !ok); if (ok) n++;
+  }
+  document.getElementById('zaehler').textContent = n + ' von ' + zeilen.length;
+  document.getElementById('leer').style.display = n ? 'none' : 'block';
+  document.querySelectorAll('#f-besucht .chip').forEach(c => c.classList.toggle('an', c.dataset.b === b));
+  try { localStorage.setItem('nms-hotg-b', b); } catch (e) {}
+}
+suche.addEventListener('input', filtern);
+document.getElementById('f-besucht').addEventListener('click', e => {
+  const c = e.target.closest('.chip'); if (c) { b = c.dataset.b; filtern(); }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { suche.value = ''; filtern(); suche.focus(); } });
+document.getElementById('tab').addEventListener('click', async e => {
+  const k = e.target.closest('.kopieren'); if (!k) return;
+  try { await navigator.clipboard.writeText(k.dataset.kopie); k.textContent = '✓ kopiert'; }
+  catch (err) { k.textContent = 'Fehler'; }
+  setTimeout(() => k.textContent = 'kopieren', 1500);
+});
+document.getElementById('aktualisieren').addEventListener('click', async e => {
+  const k = e.currentTarget, m = document.getElementById('aktmeldung');
+  k.disabled = true; m.style.color = 'var(--muted)'; m.textContent = 'holt …';
+  try {
+    const r = await fetch('/api/hotg/aktualisieren', { method: 'POST' });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.fehler || 'Fehler ' + r.status);
+    const teile = [];
+    if (j.neu.length) teile.push('neu: Galaxie ' + j.neu.join(', '));
+    if (j.geaendert.length) teile.push('geändert: ' + j.geaendert.join(', '));
+    if (j.entfernt.length) teile.push('entfernt: ' + j.entfernt.join(', '));
+    sessionStorage.setItem('nms-hotg-meldung', teile.length ? 'Aktualisiert, ' + teile.join(' · ') : 'Aktualisiert, keine Änderungen.');
+    location.reload();
+  } catch (err) { m.style.color = '#ff8a7a'; m.textContent = '⚠ ' + err.message; k.disabled = false; }
+});
+try { const t = sessionStorage.getItem('nms-hotg-meldung');
+  if (t) { sessionStorage.removeItem('nms-hotg-meldung'); const m = document.getElementById('aktmeldung'); m.style.color = '#7be08a'; m.textContent = '✓ ' + t; } } catch (e) {}
+filtern();
+</script>
+</body>
+</html>

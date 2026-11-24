@@ -1,0 +1,16 @@
+# Umgebung und Laufzeit
+.venv/
+__pycache__/
+.DS_Store
+server.log
+
+# Persönliche Daten (Datenbank, Sicherungen, Numbers-Original) bleiben lokal
+nms.db
+export/
+Galaxieliste_neu.numbers
+data/
+
+# eigene Numbers-Liste und gescannte Fremdlisten (nur lokal, für den Erstimport)
+galaxie_numbers.csv
+galaxy-liste.pdf
+NMSGalaxyList.pdf.png

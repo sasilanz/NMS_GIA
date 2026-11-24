@@ -1,0 +1,10 @@
+services:
+  nms:
+    build: .
+    ports:
+      # nur vom eigenen Rechner erreichbar (kein Zugriff aus dem Netzwerk, es gibt keinen Login)
+      - "127.0.0.1:5050:5050"
+    volumes:
+      # Datenbank und Sicherungen landen im Ordner ./data
+      - ./data:/data
+    restart: unless-stopped
