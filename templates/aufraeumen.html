@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="de">
+<html lang="{{ lang }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Aufräumen</title>
+<title>{{ _('Aufräumen') }}</title>
 <style>
   :root {
     {% for name, wert in farben.items() %}--{{ name }}: {{ wert }};
@@ -55,25 +55,23 @@
 </head>
 <body>
 <div class="leiste">
-  <a href="/">← Raster</a>
-  <a href="/suche">🔍 Suche</a>
+  <a href="/">← {{ _('Raster') }}</a>
+  <a href="/suche">🔍 {{ _('Suche') }}</a>
   {% if eigene_allianz %}<a href="/allianz" style="border-color:#ffd54a; color:#ffd54a">★ {{ eigene_allianz.name }}</a>{% endif %}
+  {% include '_sprache.html' %}
 </div>
 <main>
-  <h1>Aufräumen</h1>
-  <p class="muted">Diese Galaxien haben noch den alten Freitext aus der Numbers-Liste in der Notiz. Öffne eine Galaxie,
-     lege daraus Systeme und Einträge an (die Platzhalter in den Namensfeldern zeigen das Schema <em>Kürzel + Typ + Merkmal</em>) und lösche danach
-     die erledigten Zeilen aus der Notiz. Sobald kein alter Text mehr drinsteht, verschwindet die Galaxie aus dieser Liste.
-     Den Rest der Notiz kannst du behalten.</p>
+  <h1>{{ _('Aufräumen') }}</h1>
+  <p class="muted">{{ _('Diese Galaxien haben noch den alten Freitext aus der Numbers-Liste in der Notiz. Öffne eine Galaxie, lege daraus Systeme und Einträge an (die Platzhalter in den Namensfeldern zeigen das Schema Kürzel + Typ + Merkmal) und lösche danach die erledigten Zeilen aus der Notiz. Sobald kein alter Text mehr drinsteht, verschwindet die Galaxie aus dieser Liste. Den Rest der Notiz kannst du behalten.') }}</p>
 
   {% set offen_n = offen|length %}
-  <div class="fortschritt"><b>{{ offen_n }}</b> Galaxien noch offen{% if mit_systemen %} · bei <b>{{ mit_systemen }}</b> sind schon Systeme angelegt{% endif %}</div>
+  <div class="fortschritt">{{ _('{n} Galaxien noch offen', n=offen_n) }}{% if mit_systemen %} · {{ _('bei {n} sind schon Systeme angelegt', n=mit_systemen) }}{% endif %}</div>
 
   {% if offen %}
   <div class="werkzeug">
-    <input id="filter" type="search" placeholder="In den alten Texten suchen …" autocomplete="off">
-    <span class="chip" id="nur-leer" title="Nur Galaxien, in denen noch gar nichts angelegt ist">noch ohne Systeme</span>
-    <span class="chip" id="nur-besucht">besucht</span>
+    <input id="filter" type="search" placeholder="{{ _('In den alten Texten suchen …') }}" autocomplete="off">
+    <span class="chip" id="nur-leer" title="{{ _('Nur Galaxien, in denen noch gar nichts angelegt ist') }}">{{ _('noch ohne Systeme') }}</span>
+    <span class="chip" id="nur-besucht">{{ _('besucht') }}</span>
     <span class="muted" id="zaehler"></span>
   </div>
   <div id="liste">
@@ -81,10 +79,10 @@
     <div class="karte {{ g.klasse }}" data-systeme="{{ g.systeme }}" data-besucht="{{ g.besucht }}">
       <div class="kopf"><span class="nr">{{ g.nr }}</span> {{ g.name }}
         {% if g.kuerzel %}<span class="abz">{{ g.kuerzel }}</span>{% endif %}
-        {% if g.besucht %}<span class="abz besucht">✓ besucht</span>{% endif %}
-        {% if g.systeme %}<span class="abz gelb">{{ g.systeme }} System(e), {{ g.eintraege }} Eintrag/Einträge schon angelegt</span>{% endif %}
+        {% if g.besucht %}<span class="abz besucht">✓ {{ _('besucht') }}</span>{% endif %}
+        {% if g.systeme %}<span class="abz gelb">{{ _('{s} System(e), {e} Eintrag/Einträge schon angelegt', s=g.systeme, e=g.eintraege) }}</span>{% endif %}
       </div>
-      <a class="oeffnen" href="/galaxy/{{ g.nr }}">Öffnen →</a>
+      <a class="oeffnen" href="/galaxy/{{ g.nr }}">{{ _('Öffnen →') }}</a>
       <div class="text">
         {% for spalte, inhalt in g.zeilen %}
         <div class="zeile"><span class="spalte">{{ spalte }}</span><span class="inhalt">{{ inhalt }}</span></div>
@@ -94,10 +92,11 @@
     {% endfor %}
   </div>
   {% else %}
-  <div class="fertig">🎉 Alles aufgeräumt. In keiner Galaxie steht noch alter Freitext.</div>
+  <div class="fertig">🎉 {{ _('Alles aufgeräumt. In keiner Galaxie steht noch alter Freitext.') }}</div>
   {% endif %}
 </main>
 <script>
+{% include '_js.html' %}
 const karten = [...document.querySelectorAll('.karte')];
 const f = document.getElementById('filter');
 if (f) {
@@ -112,7 +111,7 @@ if (f) {
                  && (!bes.classList.contains('an') || k.dataset.besucht === '1');
       k.style.display = ok ? '' : 'none'; if (ok) n++;
     }
-    z.textContent = n + ' von ' + karten.length;
+    z.textContent = _('{n} von {m}', { n, m: karten.length });
   }
   f.addEventListener('input', filtern);
   for (const c of [leer, bes]) c.addEventListener('click', () => { c.classList.toggle('an'); filtern(); });

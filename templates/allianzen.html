@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="de">
+<html lang="{{ lang }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Allianzen</title>
+<title>{{ _('Allianzen') }}</title>
 <style>
   :root {
     {% for name, wert in farben.items() %}--{{ name }}: {{ wert }};
@@ -43,34 +43,35 @@
 </head>
 <body>
 <div class="leiste">
-  <a href="/">← Raster</a>
-  <a href="/suche" title="In allem suchen">🔍 Suche</a>
-  <a class="aktiv" href="/allianzen">🤝 Allianzen</a>
-  <a href="/hotg">🚀 HotG-Hubs</a>
+  <a href="/">← {{ _('Raster') }}</a>
+  <a href="/suche" title="{{ _('In allem suchen') }}">🔍 {{ _('Suche') }}</a>
+  <a class="aktiv" href="/allianzen">🤝 {{ _('Allianzen') }}</a>
+  <a href="/hotg">🚀 {{ _('HotG-Hubs') }}</a>
   <span id="status"></span>
+  {% include '_sprache.html' %}
 </div>
 <main>
-  <h1>🤝 Allianzen</h1>
-  <div class="sub">Hier siehst du alle Allianzen, deren Raumstationen du erfasst hast. Eine Station einer fremden Allianz legst du in
-    der Galaxie an (Eintrag vom Typ Raumstation, dort die Allianz wählen oder hier vorher anlegen).</div>
-  <button class="knopf" id="neue-allianz">+ Allianz</button>
+  <h1>🤝 {{ _('Allianzen') }}</h1>
+  <div class="sub">{{ _('Hier siehst du alle Allianzen, deren Raumstationen du erfasst hast. Eine Station einer fremden Allianz legst du in der Galaxie an (Eintrag vom Typ Raumstation, dort die Allianz wählen oder hier vorher anlegen).') }}</div>
+  <button class="knopf" id="neue-allianz">+ {{ _('Allianz') }}</button>
   <div class="karten">
     {% for a in allianzen %}
     <a class="karte{% if a.eigene %} eigene{% endif %}" href="/allianz/{{ a.id }}">
-      <div><span class="name">{{ a.name }}</span>{% if a.eigene %}<span class="eig">★ meine eigene</span>{% endif %}</div>
-      <div class="zahlen"><b>{{ a.stationen }}</b> Station{{ '' if a.stationen == 1 else 'en' }} in <b>{{ a.galaxien }}</b> Galaxie{{ '' if a.galaxien == 1 else 'n' }}</div>
+      <div><span class="name">{{ a.name }}</span>{% if a.eigene %}<span class="eig">★ {{ _('meine eigene') }}</span>{% endif %}</div>
+      <div class="zahlen">{% set st = _('{n} Station', n=a.stationen) if a.stationen == 1 else _('{n} Stationen', n=a.stationen) %}{% set ga = _('{n} Galaxie', n=a.galaxien) if a.galaxien == 1 else _('{n} Galaxien', n=a.galaxien) %}{{ _('{s} in {g}', s=st, g=ga) }}</div>
       {% if a.notiz %}<div class="notiz">{{ a.notiz }}</div>{% endif %}
     </a>
     {% endfor %}
   </div>
 </main>
 <script>
+{% include '_js.html' %}
 document.getElementById('neue-allianz').addEventListener('click', async () => {
-  const name = prompt('Name der neuen Allianz:');
+  const name = prompt(_('Name der neuen Allianz:'));
   if (!name || !name.trim()) return;
   const r = await fetch('/api/allianz', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
   const j = await r.json().catch(() => ({}));
-  if (!r.ok) { const s = document.getElementById('status'); s.className = 'fehler'; s.textContent = '⚠ ' + (j.fehler || 'Fehler'); return; }
+  if (!r.ok) { const s = document.getElementById('status'); s.className = 'fehler'; s.textContent = '⚠ ' + (j.fehler || _('Fehler')); return; }
   location.href = '/allianz/' + j.id;
 });
 </script>

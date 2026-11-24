@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="de">
+<html lang="{{ lang }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Suche</title>
+<title>{{ _('Suche') }}</title>
 <style>
   :root {
     {% for name, wert in farben.items() %}--{{ name }}: {{ wert }};
@@ -50,16 +50,18 @@
 </head>
 <body>
 <div class="leiste">
-  <a href="/">← Raster</a>
+  <a href="/">← {{ _('Raster') }}</a>
   {% if eigene_allianz %}<a href="/allianz" style="border-color:#ffd54a; color:#ffd54a">★ {{ eigene_allianz.name }}</a>{% endif %}
+  {% include '_sprache.html' %}
 </div>
 <main>
-  <input id="q" type="search" placeholder="Basis, Planet, System, Galaxie, Notiz …" autocomplete="off" autofocus value="{{ q }}">
-  <div class="tipp">Mehrere Wörter schränken ein („ezd insel“). Groß/Klein ist egal, bei Umlauten geht „ü“ wie „u“ und „ue“. Gesucht wird in Namen, Planeten und Notizen, auch in den alten Texten der Galaxie-Notizen.</div>
+  <input id="q" type="search" placeholder="{{ _('Basis, Planet, System, Galaxie, Notiz …') }}" autocomplete="off" autofocus value="{{ q }}">
+  <div class="tipp">{{ _('Mehrere Wörter schränken ein („ezd insel“). Groß/Klein ist egal, bei Umlauten geht „ü“ wie „u“ und „ue“. Gesucht wird in Namen, Planeten und Notizen, auch in den alten Texten der Galaxie-Notizen.') }}</div>
   <div id="zusammen"></div>
   <div id="ergebnis"></div>
 </main>
 <script>
+{% include '_js.html' %}
 const q = document.getElementById('q'), erg = document.getElementById('ergebnis'), zus = document.getElementById('zusammen');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // gleiche Faltung wie auf dem Server: Akzente weg, klein, Länge bleibt gleich
@@ -83,22 +85,22 @@ function markiere(text, woerter) {
 function karte(t, w) {
   const dot = `<span class="punkt ${t.galaxy_klasse}"></span>`;
   const galaxie = `<span>${dot}${t.galaxy_nr} ${markiere(t.galaxy_name, w)}</span>`;
-  const woher = t.treffer_in.length ? `<div class="woher">Treffer in: ${t.treffer_in.join(', ')}</div>` : '';
+  const woher = t.treffer_in.length ? `<div class="woher">${esc(_('Treffer in:'))} ${t.treffer_in.map(x => esc(_(x))).join(', ')}</div>` : '';
   const auszug = t.auszug ? `<div class="auszug">${markiere(t.auszug, w)}</div>` : '';
   if (t.art === 'eintrag') {
     const al = t.allianz ? `<span class="abz al">${t.eigene ? '★ ' : ''}${markiere(t.allianz, w)}</span>` : '';
-    const planet = t.planet ? `<span class="trenn">›</span><span>Planet ${markiere(t.planet, w)}</span>` : '';
+    const planet = t.planet ? `<span class="trenn">›</span><span>${esc(_('Planet'))} ${markiere(t.planet, w)}</span>` : '';
     return `<a class="treffer eintrag${t.eigene ? ' allianz-eigene' : ''}" href="/galaxy/${t.galaxy_nr}#e${t.id}">
-      <div class="titel">${markiere(t.titel, w)} <span class="abz">${esc(t.typ)}</span> ${al}</div>
-      <div class="pfad">${galaxie}<span class="trenn">›</span><span>System ${markiere(t.system_name, w)}</span>${planet}</div>${auszug}${woher}</a>`;
+      <div class="titel">${markiere(t.titel, w)} <span class="abz">${esc(_(t.typ))}</span> ${al}</div>
+      <div class="pfad">${galaxie}<span class="trenn">›</span><span>${esc(_('System'))} ${markiere(t.system_name, w)}</span>${planet}</div>${auszug}${woher}</a>`;
   }
   if (t.art === 'system') {
     return `<a class="treffer system" href="/galaxy/${t.galaxy_nr}#s${t.id}">
-      <div class="titel">${markiere(t.titel, w)} <span class="abz">System</span></div>
+      <div class="titel">${markiere(t.titel, w)} <span class="abz">${esc(_('System'))}</span></div>
       <div class="pfad">${galaxie}</div>${auszug}${woher}</a>`;
   }
   const kz = t.kuerzel ? `<span class="abz">${markiere(t.kuerzel, w)}</span>` : '';
-  const b = t.besucht ? '<span class="abz besucht">✓ besucht</span>' : '';
+  const b = t.besucht ? '<span class="abz besucht">✓ ' + esc(_('besucht')) + '</span>' : '';
   return `<a class="treffer galaxie" href="/galaxy/${t.galaxy_nr}">
     <div class="titel">${dot}${t.galaxy_nr} ${markiere(t.titel, w)} ${kz} ${b}</div>${auszug}${woher}</a>`;
 }
@@ -112,9 +114,9 @@ async function suchen() {
   if (mein !== anfrageNr) return;           // veraltete Antwort ignorieren
   const j = await r.json();
   const w = fold(text).split(/\s+/).filter(Boolean).flatMap(varianten);
-  if (!j.gesamt) { zus.textContent = ''; erg.innerHTML = '<div class="leer">Nichts gefunden für „' + esc(text) + '“.</div>'; return; }
-  const gruppen = [['eintrag', 'Einträge (Basen, Stationen …)'], ['system', 'Systeme'], ['galaxie', 'Galaxien']];
-  zus.textContent = j.gesamt + ' Treffer' + (j.gesamt > j.treffer.length ? ' (die ersten ' + j.treffer.length + ' werden angezeigt)' : '');
+  if (!j.gesamt) { zus.textContent = ''; erg.innerHTML = '<div class="leer">' + esc(_('Nichts gefunden für „{q}“.', { q: text })) + '</div>'; return; }
+  const gruppen = [['eintrag', _('Einträge (Basen, Stationen …)')], ['system', _('Systeme')], ['galaxie', _('Galaxien')]];
+  zus.textContent = _('{n} Treffer', { n: j.gesamt }) + (j.gesamt > j.treffer.length ? ' ' + _('(die ersten {n} werden angezeigt)', { n: j.treffer.length }) : '');
   erg.innerHTML = gruppen.map(([art, titel]) => {
     const liste = j.treffer.filter(t => t.art === art);
     return liste.length ? `<h2>${titel} · ${liste.length}</h2>` + liste.map(t => karte(t, w)).join('') : '';

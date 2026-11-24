@@ -1,0 +1,2 @@
+const L = {{ js_woerterbuch|tojson }};
+const _ = (s, v) => { let t = L[s] ?? s; for (const k in (v || {})) t = t.replaceAll('{' + k + '}', v[k]); return t; };

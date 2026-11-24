@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="de">
+<html lang="{{ lang }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NMS Galaxien</title>
+<title>{{ _("NMS Galaxien") }}</title>
 <style>
   :root {
     {% for name, wert in farben.items() %}--{{ name }}: {{ wert }};
@@ -65,17 +65,18 @@
 <body>
 <header>
   <div class="zeile1">
-    <h1>NMS Galaxien</h1>
-    {% if eigene_allianz %}<a class="neu-knopf" href="/allianz" style="text-decoration:none; border-color:#ffd54a; color:#ffd54a" title="Meine eigene Allianz">★ {{ eigene_allianz.name }}</a>{% endif %}
-    <input id="suche" type="search" placeholder="Nummer, Name oder Kürzel …" autocomplete="off" autofocus>
+    <h1>{{ _("NMS Galaxien") }}</h1>
+    {% if eigene_allianz %}<a class="neu-knopf" href="/allianz" style="text-decoration:none; border-color:#ffd54a; color:#ffd54a" title="{{ _('Meine eigene Allianz') }}">★ {{ eigene_allianz.name }}</a>{% endif %}
+    <input id="suche" type="search" placeholder="{{ _('Nummer, Name oder Kürzel …') }}" autocomplete="off" autofocus>
     <span id="info"></span>
-    <a id="reset" href="#" style="display:none; color:var(--besucht); white-space:nowrap" title="Suche und alle Filter zurücksetzen">✕ Filter zurücksetzen</a>
-    <a class="neu-knopf" href="/allianzen" style="text-decoration:none" title="Alle Allianzen, auch fremde">🤝 Allianzen</a>
-    <a class="neu-knopf" href="/hotg" style="text-decoration:none" title="Alle HotG-Hubs, auch in noch nicht besuchten Galaxien">🚀 HotG-Hubs</a>
-    <a class="neu-knopf" href="/suche" id="suche-link" style="text-decoration:none" title="In Basen, Systemen, Planeten und Notizen suchen">🔍 Alles durchsuchen</a>
-    {% if aufraeumen_offen %}<a class="neu-knopf" href="/aufraeumen" style="text-decoration:none" title="Galaxien mit altem Freitext in der Notiz">Aufräumen ({{ aufraeumen_offen }})</a>{% endif %}
-    <a class="neu-knopf" href="/export" style="text-decoration:none" title="Sicherung der Daten">Sicherung</a>
-    <label class="groesse">Kachelgröße <input id="groesse" type="range" min="160" max="460" step="10" value="270"></label>
+    <a id="reset" href="#" style="display:none; color:var(--besucht); white-space:nowrap" title="{{ _('Suche und alle Filter zurücksetzen') }}">✕ {{ _('Filter zurücksetzen') }}</a>
+    <a class="neu-knopf" href="/allianzen" style="text-decoration:none" title="{{ _('Alle Allianzen, auch fremde') }}">🤝 {{ _('Allianzen') }}</a>
+    <a class="neu-knopf" href="/hotg" style="text-decoration:none" title="{{ _('Alle HotG-Hubs, auch in noch nicht besuchten Galaxien') }}">🚀 {{ _('HotG-Hubs') }}</a>
+    <a class="neu-knopf" href="/suche" id="suche-link" style="text-decoration:none" title="{{ _('In Basen, Systemen, Planeten und Notizen suchen') }}">🔍 {{ _('Alles durchsuchen') }}</a>
+    {% if aufraeumen_offen %}<a class="neu-knopf" href="/aufraeumen" style="text-decoration:none" title="{{ _('Galaxien mit altem Freitext in der Notiz') }}">{{ _('Aufräumen') }} ({{ aufraeumen_offen }})</a>{% endif %}
+    <a class="neu-knopf" href="/export" style="text-decoration:none" title="{{ _('Sicherung der Daten') }}">{{ _('Sicherung') }}</a>
+    <label class="groesse">{{ _('Kachelgröße') }} <input id="groesse" type="range" min="160" max="460" step="10" value="270"></label>
+    {% include '_sprache.html' %}
   </div>
   <div id="ergebnis"></div>
   <div id="global" style="margin-top:4px; min-height:0"></div>
@@ -87,18 +88,18 @@
       <span class="chip" data-typ="empty"><span class="punkt" style="background:var(--empty)"></span>Empty</span>
     </div>
     <div class="gruppe" id="f-besucht">
-      <span class="chip" data-b="alle">alle</span>
-      <span class="chip" data-b="ja">besucht</span>
-      <span class="chip" data-b="nein">nicht besucht</span>
+      <span class="chip" data-b="alle">{{ _('alle') }}</span>
+      <span class="chip" data-b="ja">{{ _('besucht') }}</span>
+      <span class="chip" data-b="nein">{{ _('nicht besucht') }}</span>
     </div>
     <div class="gruppe">
-      <span class="chip" id="f-basis">hat Basis / Station</span>
-      <select class="chip" id="f-allianz" title="Nur Galaxien mit einer Station dieser Allianz">
-        <option value="">Allianz-Station …</option>
-        <option value="irgend">irgendeine Allianz</option>
+      <span class="chip" id="f-basis">{{ _('hat Basis / Station') }}</span>
+      <select class="chip" id="f-allianz" title="{{ _('Nur Galaxien mit einer Station dieser Allianz') }}">
+        <option value="">{{ _('Allianz-Station …') }}</option>
+        <option value="irgend">{{ _('irgendeine Allianz') }}</option>
         {% for a in allianzen %}<option value="{{ a.id }}">{% if a.eigene %}★ {% endif %}{{ a.name }}</option>{% endfor %}
       </select>
-      <span class="chip" id="f-hotg" title="Galaxien mit HotG-Hub (Liste aus dem NMS-Wiki)">🚀 HotG-Hub</span>
+      <span class="chip" id="f-hotg" title="{{ _('Galaxien mit HotG-Hub (Liste aus dem NMS-Wiki)') }}">🚀 {{ _('HotG-Hub') }}</span>
     </div>
   </div>
 </header>
@@ -109,19 +110,20 @@
     <div class="kachel {{ g.klasse }}{% if g.besucht %} besucht{% endif %}"
          data-nr="{{ g.nr }}" data-name="{{ g.name|lower }}" data-kz="{{ (g.kuerzel or '')|lower }}"
          data-typ="{{ g.klasse }}" data-eintraege="{{ g.eintraege }}" data-hotg="{{ 1 if g.hotg else 0 }}" data-al=",{{ g.allianzen }},">
-      <button class="haken" type="button" title="Besucht umschalten">✓</button>
+      <button class="haken" type="button" title="{{ _('Besucht umschalten') }}">✓</button>
       <div class="nr">{{ g.nr }}</div>
       <div class="name">{{ g.name }}</div>
       {% if g.kuerzel %}<div class="kz">{{ g.kuerzel }}</div>{% endif %}
-      {% if g.hotg %}<span class="hotg" title="Hier gibt es einen HotG-Hub">HotG</span>{% endif %}
-      {% if g.eintraege %}<span class="zaehler" title="Einträge (Basen, Stationen …)">⌂ {{ g.eintraege }}</span>{% endif %}
+      {% if g.hotg %}<span class="hotg" title="{{ _('Hier gibt es einen HotG-Hub') }}">HotG</span>{% endif %}
+      {% if g.eintraege %}<span class="zaehler" title="{{ _('Einträge (Basen, Stationen …)') }}">⌂ {{ g.eintraege }}</span>{% endif %}
     </div>
     {% endfor %}
   </div>
-  <div id="leer">Keine Galaxie gefunden.</div>
+  <div id="leer">{{ _('Keine Galaxie gefunden.') }}</div>
 </main>
 
 <script>
+{% include '_js.html' %}
 const kacheln = [...document.querySelectorAll('.kachel')];
 const suche = document.getElementById('suche');
 const info = document.getElementById('info');
@@ -153,7 +155,7 @@ function filtern() {
   }
   const zeigen = new Set(sichtbar);
   for (const k of kacheln) k.classList.toggle('versteckt', !zeigen.has(k));
-  info.textContent = sichtbar.length + ' von ' + kacheln.length;
+  info.textContent = _('{n} von {m}', { n: sichtbar.length, m: kacheln.length });
   document.getElementById('reset').style.display = (q || filter.typ.size || filter.b !== 'alle' || filter.basis || filter.hotg || filter.al) ? '' : 'none';
   speichern();
   leer.style.display = sichtbar.length ? 'none' : 'block';
@@ -161,14 +163,14 @@ function filtern() {
   if (sichtbar.length === 1 && q) {
     const k = sichtbar[0], b = k.classList.contains('besucht'), n = +k.dataset.eintraege;
     ergebnis.innerHTML = '#' + k.dataset.nr + ' ' + k.querySelector('.name').textContent + ': ' +
-      (b ? '<b class="ja">✓ schon besucht</b>' : '<b class="nein">noch nicht besucht</b>') +
-      (n ? ' · ' + n + ' Eintrag/Einträge' : '') + (k.dataset.hotg === '1' ? ' · 🚀 HotG-Hub vorhanden' : '');
+      (b ? '<b class="ja">✓ ' + _('schon besucht') + '</b>' : '<b class="nein">' + _('noch nicht besucht') + '</b>') +
+      (n ? ' · ' + _('{n} Eintrag/Einträge', { n }) : '') + (k.dataset.hotg === '1' ? ' · 🚀 ' + _('HotG-Hub vorhanden') : '');
   } else ergebnis.textContent = '';
   // Hinweis: dasselbe in Basen, Systemen, Planeten und Notizen suchen
   const g = document.getElementById('global');
   g.innerHTML = q ? '<a href="/suche?q=' + encodeURIComponent(suche.value.trim()) + '" style="color:var(--muted)">' +
-    '🔍 „' + suche.value.trim().replace(/[<>&"]/g, '') + '“ auch in Basen, Systemen, Planeten und Notizen suchen →</a>' : '';
-  if (ausserhalb) g.innerHTML = '<span style="color:var(--besucht)">Keine besuchte Galaxie passt. Gezeigt werden die Treffer trotz Filter „besucht“.</span><br>' + g.innerHTML;
+    '🔍 ' + _('„{q}“ auch in Basen, Systemen, Planeten und Notizen suchen →', { q: suche.value.trim().replace(/[<>&"]/g, '') }) + '</a>' : '';
+  if (ausserhalb) g.innerHTML = '<span style="color:var(--besucht)">' + _('Keine besuchte Galaxie passt. Gezeigt werden die Treffer trotz Filter „besucht“.') + '</span><br>' + g.innerHTML;
 }
 
 suche.addEventListener('input', filtern);
@@ -208,7 +210,7 @@ document.getElementById('raster').addEventListener('click', async e => {
   }
   const k = knopf.closest('.kachel');
   const r = await fetch('/api/galaxy/' + k.dataset.nr + '/besucht', { method: 'POST' });
-  if (!r.ok) { alert('Speichern fehlgeschlagen'); return; }
+  if (!r.ok) { alert(_('Speichern fehlgeschlagen')); return; }
   const j = await r.json();
   k.classList.toggle('besucht', j.besucht);
   filtern();
@@ -240,8 +242,8 @@ function speichern() {
 function wiederherstellen() {
   try {
     const f = JSON.parse(localStorage.getItem('nms-filter') || 'null');
-    if (!f) {  // erster Start: nur besuchte Galaxien zeigen
-      setzeBesucht('ja');
+    if (!f) {  // erster Start: nur besuchte Galaxien zeigen (ist noch keine besucht, alle zeigen)
+      setzeBesucht(kacheln.some(k => k.classList.contains('besucht')) ? 'ja' : 'alle');
     } else {
       setzeBesucht(f.b);
       for (const t of f.typ || []) { filter.typ.add(t); document.querySelector('#f-typ [data-typ="' + t + '"]')?.classList.add('an'); }

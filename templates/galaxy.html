@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="{{ lang }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -84,61 +84,63 @@
 </head>
 <body>
 <div class="leiste">
-  <a href="/">← Raster</a>
-  <a href="/suche" title="In allem suchen">🔍 Suche</a>
-  <a href="/allianzen" title="Alle Allianzen">🤝 Allianzen</a>
-  <a href="/hotg" title="Alle HotG-Hubs">🚀 HotG</a>
-  {% if eigene_allianz %}<a href="/allianz" style="border-color:#ffd54a; color:#ffd54a" title="Meine eigene Allianz">★ {{ eigene_allianz.name }}</a>{% endif %}
-  <a id="vor" href="{% if daten.vorher %}/galaxy/{{ daten.vorher }}{% else %}#{% endif %}" title="vorherige Galaxie">‹ {{ daten.vorher or '' }}</a>
-  <a id="nach" href="{% if daten.nachher %}/galaxy/{{ daten.nachher }}{% else %}#{% endif %}" title="nächste Galaxie">{{ daten.nachher or '' }} ›</a>
+  <a href="/">← {{ _('Raster') }}</a>
+  <a href="/suche" title="{{ _('In allem suchen') }}">🔍 {{ _('Suche') }}</a>
+  <a href="/allianzen" title="{{ _('Alle Allianzen') }}">🤝 {{ _('Allianzen') }}</a>
+  <a href="/hotg" title="{{ _('Alle HotG-Hubs') }}">🚀 HotG</a>
+  {% if eigene_allianz %}<a href="/allianz" style="border-color:#ffd54a; color:#ffd54a" title="{{ _('Meine eigene Allianz') }}">★ {{ eigene_allianz.name }}</a>{% endif %}
+  <a id="vor" href="{% if daten.vorher %}/galaxy/{{ daten.vorher }}{% else %}#{% endif %}" title="{{ _('vorherige Galaxie') }}">‹ {{ daten.vorher or '' }}</a>
+  <a id="nach" href="{% if daten.nachher %}/galaxy/{{ daten.nachher }}{% else %}#{% endif %}" title="{{ _('nächste Galaxie') }}">{{ daten.nachher or '' }} ›</a>
   <span class="platz"></span>
   <span id="status"></span>
+  {% include '_sprache.html' %}
 </div>
 
 <main>
   {% if daten.hotg %}
   <div style="margin-bottom:14px; padding:12px 18px; border:1px solid #ffd54a; border-radius:12px; background:var(--panel)">
-    🚀 <b style="color:#ffd54a">HotG-Hub:</b> {{ daten.hotg.system }}
-    {% if daten.hotg.glyphen %}· Portal <code style="letter-spacing:.12em">{{ daten.hotg.glyphen }}</code>{% endif %}
+    🚀 <b style="color:#ffd54a">{{ _('HotG-Hub') }}:</b> {{ daten.hotg.system }}
+    {% if daten.hotg.glyphen %}· {{ _('Portal') }} <code style="letter-spacing:.12em">{{ daten.hotg.glyphen }}</code>{% endif %}
     {% if daten.hotg.zugang %}· <span style="color:var(--muted)">{{ daten.hotg.zugang }}</span>{% endif %}
-    {% if daten.hotg.entdeckt_von %}<span style="color:var(--muted)">· entdeckt von {{ daten.hotg.entdeckt_von }}</span>{% endif %}
+    {% if daten.hotg.entdeckt_von %}<span style="color:var(--muted)">· {{ _('entdeckt von') }} {{ daten.hotg.entdeckt_von }}</span>{% endif %}
   </div>
   {% endif %}
   <section class="kopf" id="kopf">
-    <h1>Galaxie <span id="nr">{{ daten.galaxy.nr }}</span></h1>
+    <h1>{{ _('Galaxie') }} <span id="nr">{{ daten.galaxy.nr }}</span></h1>
     <div class="grid">
-      <label class="feld">Name <input id="name" data-feld="name"></label>
-      <label class="feld">Kürzel <input id="kuerzel" data-feld="kuerzel" placeholder="z. B. EZD"></label>
-      <label class="feld">Typ
+      <label class="feld">{{ _('Name') }} <input id="name" data-feld="name"></label>
+      <label class="feld">{{ _('Kürzel') }} <input id="kuerzel" data-feld="kuerzel" placeholder="{{ _('z. B. EZD') }}"></label>
+      <label class="feld">{{ _('Typ') }}
         <select id="typ" data-feld="typ">
-          <option value="">– unbekannt –</option>
+          <option value="">{{ _('– unbekannt –') }}</option>
           {% for t in galaxie_typen %}<option>{{ t }}</option>{% endfor %}
         </select></label>
-      <label class="feld">Bewertung
+      <label class="feld">{{ _('Bewertung') }}
         <select id="bewertung" data-feld="bewertung">
           <option value="">–</option>
           {% for i in range(1, 6) %}<option value="{{ i }}">{{ '★' * i }}</option>{% endfor %}
         </select></label>
-      <label class="feld voll">Notiz
-        <textarea id="notiz" data-feld="notiz" placeholder="Woran erkenne ich die Galaxie, Besonderheiten …"></textarea></label>
+      <label class="feld voll">{{ _('Notiz') }}
+        <textarea id="notiz" data-feld="notiz" placeholder="{{ _('Woran erkenne ich die Galaxie, Besonderheiten …') }}"></textarea></label>
       <div><button type="button" class="besucht-knopf" id="besucht"></button></div>
     </div>
   </section>
 
-  <h2>Systeme und Einträge <button class="knopf" id="neues-system">+ System</button></h2>
+  <h2>{{ _('Systeme und Einträge') }} <button class="knopf" id="neues-system">+ {{ _('System') }}</button></h2>
   <div id="baum"></div>
 
   <div class="gefahr-bereich">
-    <button class="knopf gefahr klein" id="galaxie-loeschen">Galaxie löschen …</button>
+    <button class="knopf gefahr klein" id="galaxie-loeschen">{{ _('Galaxie löschen …') }}</button>
   </div>
 </main>
 
 <script>
+{% include '_js.html' %}
 const START = {{ daten|tojson }};
 const NR = START.galaxy.nr;
 const EINTRAG_TYPEN = {{ eintrag_typen|tojson }};
 const LEBENSFORMEN = {{ lebensformen|tojson }};
-const STUFEN = { wealth: ['niedrig', 'mittel', 'hoch'], konflikt: ['niedrig', 'mittel', 'hoch'] };
+const STUFEN = ['niedrig', 'mittel', 'hoch'];
 let galaxy = START.galaxy, systeme = START.systeme, allianzen = START.allianzen;
 const eigene = allianzen.find(a => a.eigene);
 
@@ -153,13 +155,13 @@ function zeigeStatus(text, art) {
   if (art === 'ok') statusTimer = setTimeout(() => { s.textContent = ''; s.className = ''; }, 2000);
 }
 async function api(methode, url, daten) {
-  zeigeStatus('speichert …');
+  zeigeStatus(_('speichert …'));
   try {
     const r = await fetch(url, { method: methode, headers: { 'Content-Type': 'application/json' },
                                  body: daten === undefined ? undefined : JSON.stringify(daten) });
     const j = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(j.fehler || ('Fehler ' + r.status));
-    zeigeStatus('✓ gespeichert', 'ok');
+    if (!r.ok) throw new Error(j.fehler || (_('Fehler') + ' ' + r.status));
+    zeigeStatus('✓ ' + _('gespeichert'), 'ok');
     return j;
   } catch (e) {
     zeigeStatus('⚠ ' + e.message, 'fehler');
@@ -172,8 +174,8 @@ const TYP_KLASSE = { Lush: 'lush', Normal: 'normal', Harsh: 'harsh', Empty: 'emp
 function kopfZeichnen() {
   $('kopf').className = 'kopf ' + (TYP_KLASSE[galaxy.typ] || 'ohne-typ') + (galaxy.besucht ? ' besucht' : '');
   const b = $('besucht'); b.classList.toggle('an', !!galaxy.besucht);
-  b.textContent = galaxy.besucht ? '✓ Besucht' : 'Noch nicht besucht';
-  document.title = 'Galaxie ' + galaxy.nr + ' – ' + galaxy.name;
+  b.textContent = galaxy.besucht ? '✓ ' + _('Besucht') : _('Noch nicht besucht');
+  document.title = _('Galaxie') + ' ' + galaxy.nr + ' – ' + galaxy.name;
 }
 for (const el of document.querySelectorAll('[data-feld]')) {
   el.value = galaxy[el.dataset.feld] ?? '';
@@ -190,52 +192,52 @@ $('besucht').addEventListener('click', async () => {
 });
 $('galaxie-loeschen').addEventListener('click', async () => {
   const n = systeme.reduce((a, s) => a + s.eintraege.length, 0);
-  if (!confirm('Galaxie ' + NR + ' „' + galaxy.name + '“ wirklich löschen?' +
-               (systeme.length ? '\n\nDabei gehen auch ' + systeme.length + ' System(e) und ' + n + ' Eintrag/Einträge verloren.' : ''))) return;
+  if (!confirm(_('Galaxie {nr} „{name}“ wirklich löschen?', { nr: NR, name: galaxy.name }) +
+               (systeme.length ? '\n\n' + _('Dabei gehen auch {s} System(e) und {e} Eintrag/Einträge verloren.', { s: systeme.length, e: n }) : ''))) return;
   if (await api('DELETE', '/api/galaxy/' + NR)) location.href = '/';
 });
 
 // ---- Baum ------------------------------------------------------------------
 function allianzOptionen(gewaehlt) {
-  return '<option value="">keine (persönlich)</option>' +
+  return '<option value="">' + _('keine (persönlich)') + '</option>' +
     allianzen.map(a => `<option value="${a.id}"${a.id === gewaehlt ? ' selected' : ''}>${a.eigene ? '★ ' : ''}${esc(a.name)}</option>`).join('');
 }
 function eintragHtml(e) {
   const al = allianzen.find(a => a.id === e.allianz_id);
   const klasse = al ? (al.eigene ? ' allianz eigene' : ' allianz') : '';
-  const kz = galaxy.kuerzel || 'KZ';
+  const kz = galaxy.kuerzel || _('KZ');
   return `<div class="eintrag${klasse}" data-eid="${e.id}">
-    <select data-ef="typ">${EINTRAG_TYPEN.map(t => `<option${t === e.typ ? ' selected' : ''}>${t}</option>`).join('')}</select>
+    <select data-ef="typ">${EINTRAG_TYPEN.map(t => `<option value="${t}"${t === e.typ ? ' selected' : ''}>${esc(_(t))}</option>`).join('')}</select>
     ${e.typ === 'Raumstation'
-      ? `<input class="ohne-planet" data-ef="name" value="${esc(e.name)}" placeholder="${esc(kz)} ${esc(e.typ)} Merkmal">`
-      : `<input data-ef="name" value="${esc(e.name)}" placeholder="${esc(kz)} ${esc(e.typ)} Merkmal">
-    <input data-ef="planet" value="${esc(e.planet)}" placeholder="Planet">`}
-    <div class="alwrap"><select data-ef="allianz_id">${allianzOptionen(e.allianz_id)}</select>${al ? `<a class="allink" href="/allianz/${al.id}">Allianz öffnen →</a>` : ''}</div>
-    <button class="knopf klein gefahr loeschen" data-aktion="eintrag-loeschen" title="Eintrag löschen">✕</button>
-    <textarea class="notiz" data-ef="notiz" placeholder="Woran erkenne ich den Ort?">${esc(e.notiz)}</textarea>
+      ? `<input class="ohne-planet" data-ef="name" value="${esc(e.name)}" placeholder="${esc(kz)} ${esc(_(e.typ))} ${esc(_('Merkmal'))}">`
+      : `<input data-ef="name" value="${esc(e.name)}" placeholder="${esc(kz)} ${esc(_(e.typ))} ${esc(_('Merkmal'))}">
+    <input data-ef="planet" value="${esc(e.planet)}" placeholder="${esc(_('Planet'))}">`}
+    <div class="alwrap"><select data-ef="allianz_id">${allianzOptionen(e.allianz_id)}</select>${al ? `<a class="allink" href="/allianz/${al.id}">${esc(_('Allianz öffnen →'))}</a>` : ''}</div>
+    <button class="knopf klein gefahr loeschen" data-aktion="eintrag-loeschen" title="${esc(_('Eintrag löschen'))}">✕</button>
+    <textarea class="notiz" data-ef="notiz" placeholder="${esc(_('Woran erkenne ich den Ort?'))}">${esc(e.notiz)}</textarea>
   </div>`;
 }
 function systemHtml(s) {
-  const kz = galaxy.kuerzel || 'KZ';
+  const kz = galaxy.kuerzel || _('KZ');
   return `<div class="system" data-sid="${s.id}">
     <div class="syskopf">
-      <input class="sysname" data-sf="name" value="${esc(s.name)}" placeholder="${esc(kz)} Merkname">
-      <button class="knopf klein" data-aktion="eintrag-neu" data-typ="Basis">+ Basis / Eintrag</button>
-      ${eigene ? `<button class="knopf klein" data-aktion="eintrag-neu" data-typ="Raumstation" data-eigene="1">+ Raumstation (${esc(eigene.name)})</button>` : ''}
-      <button class="knopf klein gefahr" data-aktion="system-loeschen" title="System löschen">✕ System</button>
+      <input class="sysname" data-sf="name" value="${esc(s.name)}" placeholder="${esc(kz)} ${esc(_('Merkname'))}">
+      <button class="knopf klein" data-aktion="eintrag-neu" data-typ="Basis">+ ${esc(_('Basis / Eintrag'))}</button>
+      ${eigene ? `<button class="knopf klein" data-aktion="eintrag-neu" data-typ="Raumstation" data-eigene="1">+ ${esc(_('Raumstation'))} (${esc(eigene.name)})</button>` : ''}
+      <button class="knopf klein gefahr" data-aktion="system-loeschen" title="${esc(_('System löschen'))}">✕ ${esc(_('System'))}</button>
     </div>
     <div class="sysattr">
-      <label>Lebensform <select data-sf="lebensform"><option value="">–</option>${LEBENSFORMEN.map(l => `<option${l === s.lebensform ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>
-      <label>Wealth <select data-sf="wealth"><option value="">–</option>${STUFEN.wealth.map((t, i) => `<option value="${i + 1}"${s.wealth === i + 1 ? ' selected' : ''}>${i + 1} (${t})</option>`).join('')}</select></label>
-      <label>Konflikt <select data-sf="konflikt"><option value="">–</option>${STUFEN.konflikt.map((t, i) => `<option value="${i + 1}"${s.konflikt === i + 1 ? ' selected' : ''}>${i + 1} (${t})</option>`).join('')}</select></label>
+      <label>${esc(_('Lebensform'))} <select data-sf="lebensform"><option value="">–</option>${LEBENSFORMEN.map(l => `<option${l === s.lebensform ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>
+      <label>${esc(_('Wealth'))} <select data-sf="wealth"><option value="">–</option>${STUFEN.map((t, i) => `<option value="${i + 1}"${s.wealth === i + 1 ? ' selected' : ''}>${i + 1} (${esc(_(t))})</option>`).join('')}</select></label>
+      <label>${esc(_('Konflikt'))} <select data-sf="konflikt"><option value="">–</option>${STUFEN.map((t, i) => `<option value="${i + 1}"${s.konflikt === i + 1 ? ' selected' : ''}>${i + 1} (${esc(_(t))})</option>`).join('')}</select></label>
     </div>
-    <textarea class="sysnotiz" data-sf="notiz" placeholder="Notiz zum System">${esc(s.notiz)}</textarea>
-    <div class="eintraege">${s.eintraege.length ? s.eintraege.map(eintragHtml).join('') : '<div class="leer">Noch keine Einträge in diesem System.</div>'}</div>
+    <textarea class="sysnotiz" data-sf="notiz" placeholder="${esc(_('Notiz zum System'))}">${esc(s.notiz)}</textarea>
+    <div class="eintraege">${s.eintraege.length ? s.eintraege.map(eintragHtml).join('') : '<div class="leer">' + _('Noch keine Einträge in diesem System.') + '</div>'}</div>
   </div>`;
 }
 function baumZeichnen() {
   $('baum').innerHTML = systeme.length ? systeme.map(systemHtml).join('')
-    : '<div class="leer">Noch keine Systeme. Mit „+ System“ legst du das erste an.</div>';
+    : '<div class="leer">' + _('Noch keine Systeme. Mit „+ System“ legst du das erste an.') + '</div>';
 }
 const finde = {
   system: id => systeme.find(s => s.id === id),
@@ -271,21 +273,21 @@ $('baum').addEventListener('click', async ev => {
     const typ = knopf.dataset.typ;
     const kz = galaxy.kuerzel ? galaxy.kuerzel + ' ' : '';
     const neu = await api('POST', '/api/system/' + sid + '/eintrag',
-      { typ, name: kz + typ, allianz_id: knopf.dataset.eigene ? eigene.id : null });
+      { typ, name: kz + _(typ), allianz_id: knopf.dataset.eigene ? eigene.id : null });
     if (neu) { s.eintraege.push(neu); sysEl.outerHTML = systemHtml(s);
       const neuEl = document.querySelector(`[data-eid="${neu.id}"] [data-ef="name"]`); if (neuEl) { neuEl.focus(); neuEl.select(); } }
   } else if (aktion === 'eintrag-loeschen') {
     const eid = +knopf.closest('.eintrag').dataset.eid, [, e] = finde.eintrag(eid);
-    if (!confirm('Eintrag „' + e.name + '“ löschen?')) return;
+    if (!confirm(_('Eintrag „{name}“ löschen?', { name: e.name }))) return;
     if (await api('DELETE', '/api/eintrag/' + eid)) { s.eintraege = s.eintraege.filter(x => x.id !== eid); sysEl.outerHTML = systemHtml(s); }
   } else if (aktion === 'system-loeschen') {
-    if (!confirm('System „' + s.name + '“ löschen?' + (s.eintraege.length ? '\n\nDabei gehen auch ' + s.eintraege.length + ' Eintrag/Einträge verloren.' : ''))) return;
+    if (!confirm(_('System „{name}“ löschen?', { name: s.name }) + (s.eintraege.length ? '\n\n' + _('Dabei gehen auch {n} Eintrag/Einträge verloren.', { n: s.eintraege.length }) : ''))) return;
     if (await api('DELETE', '/api/system/' + sid)) { systeme = systeme.filter(x => x.id !== sid); baumZeichnen(); }
   }
 });
 
 $('neues-system').addEventListener('click', async () => {
-  const neu = await api('POST', '/api/galaxy/' + NR + '/system', { name: (galaxy.kuerzel ? galaxy.kuerzel + ' ' : '') + 'Neues System' });
+  const neu = await api('POST', '/api/galaxy/' + NR + '/system', { name: (galaxy.kuerzel ? galaxy.kuerzel + ' ' : '') + _('Neues System') });
   if (neu) { systeme.push(neu); baumZeichnen();
     const el = document.querySelector(`[data-sid="${neu.id}"] [data-sf="name"]`); if (el) { el.focus(); el.select(); } }
 });

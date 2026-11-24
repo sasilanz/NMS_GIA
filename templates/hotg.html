@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="de">
+<html lang="{{ lang }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HotG-Hubs</title>
+<title>{{ _('HotG-Hubs') }}</title>
 <style>
   :root {
     {% for name, wert in farben.items() %}--{{ name }}: {{ wert }};
@@ -56,49 +56,51 @@
 </head>
 <body>
 <div class="leiste">
-  <a href="/">← Raster</a>
-  <a href="/suche" title="In allem suchen">🔍 Suche</a>
-  {% if eigene_allianz %}<a href="/allianz" style="border-color:#ffd54a; color:#ffd54a" title="Meine eigene Allianz">★ {{ eigene_allianz.name }}</a>{% endif %}
-  <a href="/allianzen">🤝 Allianzen</a>
-  <a class="aktiv" href="/hotg">🚀 HotG-Hubs</a>
+  <a href="/">← {{ _('Raster') }}</a>
+  <a href="/suche" title="{{ _('In allem suchen') }}">🔍 {{ _('Suche') }}</a>
+  {% if eigene_allianz %}<a href="/allianz" style="border-color:#ffd54a; color:#ffd54a" title="{{ _('Meine eigene Allianz') }}">★ {{ eigene_allianz.name }}</a>{% endif %}
+  <a href="/allianzen">🤝 {{ _('Allianzen') }}</a>
+  <a class="aktiv" href="/hotg">🚀 {{ _('HotG-Hubs') }}</a>
+  {% include '_sprache.html' %}
 </div>
 <main>
-  <h1>🚀 Hitchhikers of the Galaxy: alle Hubs</h1>
-  <div class="sub">{{ hubs|length }} Hubs in {{ gesamt }} Galaxien, auch in Galaxien, die du noch nicht besucht hast.
-    Quelle: <a href="{{ quelle }}" target="_blank" rel="noopener">NMS-Wiki</a>, Stand {{ stand or 'unbekannt' }}.
-    Portal-Adresse in der jeweiligen Galaxie benutzen.
-    <button class="chip" id="aktualisieren" type="button" style="margin-left:10px" title="Liste jetzt frisch aus dem Wiki holen">↻ Von Fandom aktualisieren</button>
+  <h1>🚀 Hitchhikers of the Galaxy: {{ _('alle Hubs') }}</h1>
+  <div class="sub">{{ _('{n} Hubs in {m} Galaxien, auch in Galaxien, die du noch nicht besucht hast.', n=hubs|length, m=gesamt) }}
+    {{ _('Quelle') }}: <a href="{{ quelle }}" target="_blank" rel="noopener">{{ _('NMS-Wiki') }}</a>, {{ _('Stand') }} {{ stand or _('unbekannt') }}.
+    {{ _('Portal-Adresse in der jeweiligen Galaxie benutzen.') }}
+    <button class="chip" id="aktualisieren" type="button" style="margin-left:10px" title="{{ _('Liste jetzt frisch aus dem Wiki holen') }}">↻ {{ _('Von Fandom aktualisieren') }}</button>
     <span id="aktmeldung" style="margin-left:8px"></span></div>
   <div class="werkzeug">
-    <input id="suche" type="search" placeholder="Nummer, Galaxie, System, Entdecker …" autocomplete="off" autofocus>
+    <input id="suche" type="search" placeholder="{{ _('Nummer, Galaxie, System, Entdecker …') }}" autocomplete="off" autofocus>
     <span id="f-besucht" style="display:flex; gap:6px">
-      <button class="chip" data-b="alle" type="button">alle</button>
-      <button class="chip" data-b="nein" type="button">nicht besucht ({{ hubs|rejectattr('besucht')|list|length }})</button>
-      <button class="chip" data-b="ja" type="button">besucht ({{ hubs|selectattr('besucht')|list|length }})</button>
+      <button class="chip" data-b="alle" type="button">{{ _('alle') }}</button>
+      <button class="chip" data-b="nein" type="button">{{ _('nicht besucht') }} ({{ hubs|rejectattr('besucht')|list|length }})</button>
+      <button class="chip" data-b="ja" type="button">{{ _('besucht') }} ({{ hubs|selectattr('besucht')|list|length }})</button>
     </span>
     <span id="zaehler"></span>
   </div>
   <table>
-    <thead><tr><th>Nr.</th><th>Galaxie</th><th>Status</th><th>Hub-System</th><th>Portal-Glyphen (hex)</th><th>Entdeckt von</th><th>Eigene Einträge</th></tr></thead>
+    <thead><tr><th>{{ _('Nr.') }}</th><th>{{ _('Galaxie') }}</th><th>{{ _('Status') }}</th><th>{{ _('Hub-System') }}</th><th>{{ _('Portal-Glyphen (hex)') }}</th><th>{{ _('Entdeckt von') }}</th><th>{{ _('Eigene Einträge') }}</th></tr></thead>
     <tbody id="tab">
     {% for h in hubs %}
       <tr data-nr="{{ h.nr }}" data-b="{{ 'ja' if h.besucht else 'nein' }}"
           data-text="{{ (h.nr ~ ' ' ~ h.name ~ ' ' ~ (h.kuerzel or '') ~ ' ' ~ h.system ~ ' ' ~ (h.entdeckt_von or ''))|lower }}">
         <td class="muted">{{ h.nr }}</td>
         <td class="gal"><span class="galpunkt {{ h.klasse }}"></span><a href="/galaxy/{{ h.nr }}">{{ h.name }}</a></td>
-        <td><span class="status {{ 'ja' if h.besucht else 'nein' }}">{{ '✓ besucht' if h.besucht else 'nicht besucht' }}</span></td>
+        <td><span class="status {{ 'ja' if h.besucht else 'nein' }}">{{ '✓ ' ~ _('besucht') if h.besucht else _('nicht besucht') }}</span></td>
         <td>{{ h.system }}</td>
-        <td>{% if h.glyphen %}<code>{{ h.glyphen }}</code><button class="kopieren" type="button" data-kopie="{{ h.glyphen }}">kopieren</button>
-            {% elif h.zugang %}<span class="muted" title="{{ h.zugang }}">Geheimes System (Discord), siehe Galaxie</span>{% endif %}</td>
+        <td>{% if h.glyphen %}<code>{{ h.glyphen }}</code><button class="kopieren" type="button" data-kopie="{{ h.glyphen }}">{{ _('kopieren') }}</button>
+            {% elif h.zugang %}<span class="muted" title="{{ h.zugang }}">{{ _('Geheimes System (Discord), siehe Galaxie') }}</span>{% endif %}</td>
         <td class="muted">{{ h.entdeckt_von or '–' }}</td>
         <td>{% if h.eintraege %}⌂ {{ h.eintraege }}{% else %}<span class="muted">–</span>{% endif %}</td>
       </tr>
     {% endfor %}
     </tbody>
   </table>
-  <div class="leer" id="leer">Keine Hubs gefunden.</div>
+  <div class="leer" id="leer">{{ _('Keine Hubs gefunden.') }}</div>
 </main>
 <script>
+{% include '_js.html' %}
 const zeilen = [...document.querySelectorAll('#tab tr')];
 const suche = document.getElementById('suche');
 let b = 'alle';
@@ -111,7 +113,7 @@ function filtern() {
       q.every(w => /^\d+$/.test(w) ? z.dataset.nr === w || z.dataset.text.includes(w) : z.dataset.text.includes(w));
     z.classList.toggle('versteckt', !ok); if (ok) n++;
   }
-  document.getElementById('zaehler').textContent = n + ' von ' + zeilen.length;
+  document.getElementById('zaehler').textContent = _('{n} von {m}', { n, m: zeilen.length });
   document.getElementById('leer').style.display = n ? 'none' : 'block';
   document.querySelectorAll('#f-besucht .chip').forEach(c => c.classList.toggle('an', c.dataset.b === b));
   try { localStorage.setItem('nms-hotg-b', b); } catch (e) {}
@@ -123,22 +125,22 @@ document.getElementById('f-besucht').addEventListener('click', e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { suche.value = ''; filtern(); suche.focus(); } });
 document.getElementById('tab').addEventListener('click', async e => {
   const k = e.target.closest('.kopieren'); if (!k) return;
-  try { await navigator.clipboard.writeText(k.dataset.kopie); k.textContent = '✓ kopiert'; }
-  catch (err) { k.textContent = 'Fehler'; }
-  setTimeout(() => k.textContent = 'kopieren', 1500);
+  try { await navigator.clipboard.writeText(k.dataset.kopie); k.textContent = '✓ ' + _('kopiert'); }
+  catch (err) { k.textContent = _('Fehler'); }
+  setTimeout(() => k.textContent = _('kopieren'), 1500);
 });
 document.getElementById('aktualisieren').addEventListener('click', async e => {
   const k = e.currentTarget, m = document.getElementById('aktmeldung');
-  k.disabled = true; m.style.color = 'var(--muted)'; m.textContent = 'holt …';
+  k.disabled = true; m.style.color = 'var(--muted)'; m.textContent = _('holt …');
   try {
     const r = await fetch('/api/hotg/aktualisieren', { method: 'POST' });
     const j = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(j.fehler || 'Fehler ' + r.status);
+    if (!r.ok) throw new Error(j.fehler || _('Fehler') + ' ' + r.status);
     const teile = [];
-    if (j.neu.length) teile.push('neu: Galaxie ' + j.neu.join(', '));
-    if (j.geaendert.length) teile.push('geändert: ' + j.geaendert.join(', '));
-    if (j.entfernt.length) teile.push('entfernt: ' + j.entfernt.join(', '));
-    sessionStorage.setItem('nms-hotg-meldung', teile.length ? 'Aktualisiert, ' + teile.join(' · ') : 'Aktualisiert, keine Änderungen.');
+    if (j.neu.length) teile.push(_('neu: Galaxie {x}', { x: j.neu.join(', ') }));
+    if (j.geaendert.length) teile.push(_('geändert: {x}', { x: j.geaendert.join(', ') }));
+    if (j.entfernt.length) teile.push(_('entfernt: {x}', { x: j.entfernt.join(', ') }));
+    sessionStorage.setItem('nms-hotg-meldung', teile.length ? _('Aktualisiert') + ', ' + teile.join(' · ') : _('Aktualisiert, keine Änderungen.'));
     location.reload();
   } catch (err) { m.style.color = '#ff8a7a'; m.textContent = '⚠ ' + err.message; k.disabled = false; }
 });

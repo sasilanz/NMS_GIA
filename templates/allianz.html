@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="de">
+<html lang="{{ lang }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Allianz {{ daten.allianz.name }}</title>
+<title>{{ _('Allianz') }} {{ daten.allianz.name }}</title>
 <style>
   :root {
     {% for name, wert in farben.items() %}--{{ name }}: {{ wert }};
@@ -64,46 +64,47 @@
 </head>
 <body>
 <div class="leiste">
-  <a href="/">← Raster</a>
-  <a href="/suche" title="In allem suchen">🔍 Suche</a>
-  <a href="/allianzen" title="Alle Allianzen">🤝 Alle Allianzen</a>
-  {% if eigene_allianz %}<a class="aktiv" href="/allianz" title="Meine eigene Allianz">★ {{ eigene_allianz.name }}</a>{% endif %}
+  <a href="/">← {{ _('Raster') }}</a>
+  <a href="/suche" title="{{ _('In allem suchen') }}">🔍 {{ _('Suche') }}</a>
+  <a href="/allianzen" title="{{ _('Alle Allianzen') }}">🤝 {{ _('Alle Allianzen') }}</a>
+  {% if eigene_allianz %}<a class="aktiv" href="/allianz" title="{{ _('Meine eigene Allianz') }}">★ {{ eigene_allianz.name }}</a>{% endif %}
   <span class="platz"></span>
   <span id="status"></span>
+  {% include '_sprache.html' %}
 </div>
 
 <main>
   <section class="kopf{% if daten.allianz.eigene %} eigene{% endif %}" id="kopf">
     <div class="zeile">
-      <select class="wechsel" id="wechsel" title="Allianz wechseln">
+      <select class="wechsel" id="wechsel" title="{{ _('Allianz wechseln') }}">
         {% for a in daten.alle %}
         <option value="{{ a.id }}"{% if a.id == daten.allianz.id %} selected{% endif %}>{% if a.eigene %}★ {% endif %}{{ a.name }} ({{ a.anzahl }})</option>
         {% endfor %}
       </select>
-      <button class="knopf" id="neue-allianz">+ Allianz</button>
-      {% if daten.allianz.eigene %}<span class="marke">★ meine eigene Allianz</span>{% endif %}
+      <button class="knopf" id="neue-allianz">+ {{ _('Allianz') }}</button>
+      {% if daten.allianz.eigene %}<span class="marke">★ {{ _('meine eigene Allianz') }}</span>{% endif %}
     </div>
     <div class="zeile" style="margin-top:14px">
       <input id="name" data-feld="name">
     </div>
-    <textarea id="notiz" data-feld="notiz" placeholder="Notiz zur Allianz …"></textarea>
+    <textarea id="notiz" data-feld="notiz" placeholder="{{ _('Notiz zur Allianz …') }}"></textarea>
   </section>
 
   <div class="werkzeug">
-    <h2>Stationen</h2>
-    <input id="filter" type="search" placeholder="Suchen: Galaxie, System, Name, Planet …" autocomplete="off">
+    <h2>{{ _('Stationen') }}</h2>
+    <input id="filter" type="search" placeholder="{{ _('Suchen: Galaxie, System, Name, Planet …') }}" autocomplete="off">
     <span id="zaehler"></span>
   </div>
 
   {% if daten.stationen %}
   <table>
-    <thead><tr><th>Galaxie</th><th>System</th><th>Typ</th><th>Name</th><th>Planet</th><th>Notiz</th></tr></thead>
+    <thead><tr><th>{{ _('Galaxie') }}</th><th>{{ _('System') }}</th><th>{{ _('Typ') }}</th><th>{{ _('Name') }}</th><th>{{ _('Planet') }}</th><th>{{ _('Notiz') }}</th></tr></thead>
     <tbody id="liste">
       {% for s in daten.stationen %}
       <tr class="station">
-        <td class="galaxie"><a href="/galaxy/{{ s.galaxy_nr }}" title="Galaxie öffnen und bearbeiten"><span class="nr">{{ s.galaxy_nr }}</span>{{ s.galaxy_name }}</a></td>
+        <td class="galaxie"><a href="/galaxy/{{ s.galaxy_nr }}" title="{{ _('Galaxie öffnen und bearbeiten') }}"><span class="nr">{{ s.galaxy_nr }}</span>{{ s.galaxy_name }}</a></td>
         <td>{{ s.system_name }}</td>
-        <td><span class="typ">{{ s.typ }}</span></td>
+        <td><span class="typ">{{ _(s.typ) }}</span></td>
         <td class="name">{{ s.name }}</td>
         <td>{{ s.planet or '' }}</td>
         <td class="notiz">{{ s.notiz or '' }}</td>
@@ -111,27 +112,28 @@
       {% endfor %}
     </tbody>
   </table>
-  <div class="leer" id="nichts" style="display:none; margin-top:12px">Keine Treffer.</div>
-  <p class="hinweis">Bearbeiten: auf die Galaxie klicken, dort stehen alle Systeme und Einträge.</p>
+  <div class="leer" id="nichts" style="display:none; margin-top:12px">{{ _('Keine Treffer.') }}</div>
+  <p class="hinweis">{{ _('Bearbeiten: auf die Galaxie klicken, dort stehen alle Systeme und Einträge.') }}</p>
   {% else %}
   <div class="leer">
-    Noch keine Stationen in dieser Allianz.<br>
-    Öffne eine Galaxie, lege ein System an und wähle bei einem Eintrag diese Allianz aus.
-    Mit „+ Raumstation ({{ eigene_allianz.name if eigene_allianz else 'Allianz' }})“ geht es für die eigene Allianz direkt.
+    {{ _('Noch keine Stationen in dieser Allianz.') }}<br>
+    {{ _('Öffne eine Galaxie, lege ein System an und wähle bei einem Eintrag diese Allianz aus.') }}
+    {{ _('Mit „+ Raumstation ({name})“ geht es für die eigene Allianz direkt.', name=(eigene_allianz.name if eigene_allianz else _('Allianz'))) }}
   </div>
   {% endif %}
 
   <div class="unten">
     {% if not daten.allianz.eigene %}
-    <button class="knopf klein" id="als-eigene">★ Als meine eigene Allianz festlegen</button>
-    <button class="knopf klein gefahr" id="loeschen">Allianz löschen …</button>
+    <button class="knopf klein" id="als-eigene">★ {{ _('Als meine eigene Allianz festlegen') }}</button>
+    <button class="knopf klein gefahr" id="loeschen">{{ _('Allianz löschen …') }}</button>
     {% else %}
-    <span class="hinweis">Die eigene Allianz lässt sich nicht löschen. Zum Wechseln eine andere Allianz öffnen und dort „Als meine eigene Allianz festlegen“ wählen.</span>
+    <span class="hinweis">{{ _('Die eigene Allianz lässt sich nicht löschen. Zum Wechseln eine andere Allianz öffnen und dort „Als meine eigene Allianz festlegen“ wählen.') }}</span>
     {% endif %}
   </div>
 </main>
 
 <script>
+{% include '_js.html' %}
 const AL = {{ daten.allianz|tojson }};
 const $ = id => document.getElementById(id);
 let statusTimer;
@@ -141,13 +143,13 @@ function zeigeStatus(text, art) {
   if (art === 'ok') statusTimer = setTimeout(() => { s.textContent = ''; s.className = ''; }, 2000);
 }
 async function api(methode, url, daten) {
-  zeigeStatus('speichert …');
+  zeigeStatus(_('speichert …'));
   try {
     const r = await fetch(url, { method: methode, headers: { 'Content-Type': 'application/json' },
                                  body: daten === undefined ? undefined : JSON.stringify(daten) });
     const j = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(j.fehler || ('Fehler ' + r.status));
-    zeigeStatus('✓ gespeichert', 'ok');
+    if (!r.ok) throw new Error(j.fehler || (_('Fehler') + ' ' + r.status));
+    zeigeStatus('✓ ' + _('gespeichert'), 'ok');
     return j;
   } catch (e) { zeigeStatus('⚠ ' + e.message, 'fehler'); return null; }
 }
@@ -166,7 +168,7 @@ for (const el of document.querySelectorAll('[data-feld]')) {
 $('wechsel').addEventListener('change', e => { location.href = '/allianz/' + e.target.value; });
 
 $('neue-allianz').addEventListener('click', async () => {
-  const name = prompt('Name der neuen Allianz:');
+  const name = prompt(_('Name der neuen Allianz:'));
   if (!name || !name.trim()) return;
   const neu = await api('POST', '/api/allianz', { name });
   if (neu) location.href = '/allianz/' + neu.id;
@@ -174,12 +176,12 @@ $('neue-allianz').addEventListener('click', async () => {
 
 const eigeneKnopf = $('als-eigene');
 if (eigeneKnopf) eigeneKnopf.addEventListener('click', async () => {
-  if (!confirm('„' + AL.name + '“ als meine eigene Allianz festlegen?')) return;
+  if (!confirm(_('„{name}“ als meine eigene Allianz festlegen?', { name: AL.name }))) return;
   if (await api('POST', '/api/allianz/' + AL.id + '/eigene')) location.reload();
 });
 const loeschKnopf = $('loeschen');
 if (loeschKnopf) loeschKnopf.addEventListener('click', async () => {
-  if (!confirm('Allianz „' + AL.name + '“ löschen?\n\nDie Stationen bleiben in ihren Galaxien erhalten, gehören dann aber keiner Allianz mehr.')) return;
+  if (!confirm(_('Allianz „{name}“ löschen?', { name: AL.name }) + '\n\n' + _('Die Stationen bleiben in ihren Galaxien erhalten, gehören dann aber keiner Allianz mehr.'))) return;
   if (await api('DELETE', '/api/allianz/' + AL.id)) location.href = '/allianz';
 });
 
@@ -189,7 +191,7 @@ function filtern() {
   const q = $('filter').value.trim().toLowerCase();
   let n = 0;
   for (const z of zeilen) { const ok = !q || z.textContent.toLowerCase().includes(q); z.style.display = ok ? '' : 'none'; if (ok) n++; }
-  $('zaehler').textContent = zeilen.length ? n + ' von ' + zeilen.length : '';
+  $('zaehler').textContent = zeilen.length ? _('{n} von {m}', { n, m: zeilen.length }) : '';
   if ($('nichts')) $('nichts').style.display = zeilen.length && !n ? 'block' : 'none';
 }
 $('filter').addEventListener('input', filtern);

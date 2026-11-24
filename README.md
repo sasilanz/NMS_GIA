@@ -1,24 +1,27 @@
-# NMS Galaxie-Tracker
+# NMS Galaxy Tracker
 
-Lokale Webseite mit Datenbank für **No Man's Sky**, um die eigenen Orte (Galaxien, Systeme, Basen, Raumstationen, Allianzen) schnell wiederzufinden. Typische Frage: *„Ich sehe in der Anomalie eine Basis in einer Galaxie. War ich da schon, habe ich dort etwas?“*
+🇬🇧 English (this file) · 🇩🇪 [Deutsche Fassung → README.de.md](README.de.md)
 
-- Alle 256 Galaxien als farbiges Raster (Lush / Normal / Harsh / Empty), besucht ja/nein, Suche und Filter
-- Systeme und Einträge (Basis, Mini-Basis, Raumstation, Portal) je Galaxie, mit Lebensform, Wealth und Konflikt
-- Allianzen mit ihren Stationen über alle Galaxien
-- Alle **Hitchhikers-of-the-Galaxy-Hubs** (HotG) aus dem NMS-Wiki, auch in noch nicht besuchten Galaxien, mit Portal-Glyphen
-- Sicherung als Datenbankkopie, JSON und CSV
+A small local web app for **No Man's Sky** players to keep track of their own places: galaxies, systems, bases, space stations and alliances. The typical question it answers in seconds:
 
-Läuft nur lokal, **ohne Login, ohne Konto, ohne Secrets**. Alle Daten liegen in einer einzigen SQLite-Datei. Die App lauscht nur auf dem eigenen Rechner (`127.0.0.1`), nicht im Netzwerk. Die Oberfläche ist deutsch.
+> *"I see another player's base in the Anomaly. Have I been to that galaxy? Do I have anything there?"*
 
-Die vollständige Beschreibung (Ziele, Oberfläche, Importregeln) steht in [`NMS-Galaxie-Tracker-SPEC.md`](NMS-Galaxie-Tracker-SPEC.md). Diese Datei erklärt Installation, Bedienung und den Aufbau.
+- All 256 galaxies as a colour-coded grid (Lush / Normal / Harsh / Empty), visited yes/no, instant search and filters
+- Systems and entries (base, mini base, space station, portal) per galaxy, with life form, wealth and conflict level
+- Alliances with their stations across all galaxies
+- All **Hitchhikers of the Galaxy (HotG) hubs** from the NMS wiki, including galaxies you have not visited yet, with portal glyphs
+- Backups as database copy, JSON and CSV
+- **Bilingual UI: English and German** (switch in the top bar; English by default)
+
+It runs **locally only, with no login, no account and no secrets**. All data lives in one SQLite file. The app listens on `127.0.0.1` only, not on your network.
 
 ## Installation
 
-Beim **ersten Start** legt die App die Datenbank selbst an: alle 256 Galaxien (Nummer, Name), alle als „nicht besucht“, dazu die Tabelle der HotG-Hubs und eine eigene Allianz namens „Meine Allianz“ (umbenennbar in der App). Danach rufst du `http://127.0.0.1:5050` im Browser auf.
+On first start the app creates its database itself: all 256 galaxies (number and name), all marked "not visited", plus the HotG hub table and an own alliance called "My Alliance" (rename it in the app). Then open **http://127.0.0.1:5050** in your browser.
 
-### Variante A: Docker (empfohlen, nichts weiter nötig)
+### Option A: Docker (recommended, nothing else needed)
 
-Voraussetzung: [Docker Desktop](https://www.docker.com/products/docker-desktop/) (oder Docker Engine mit Compose) ist installiert und gestartet. Auf dem Mac geht auch [Colima](https://github.com/abiosoft/colima) (`brew install colima docker docker-compose`, dann `colima start`). Das Projekt muss dabei in deinem Home-Ordner liegen, damit der Ordner `data/` auf dem Mac sichtbar ist.
+Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine with Compose), running. On macOS [Colima](https://github.com/abiosoft/colima) works too (`brew install colima docker docker-compose`, then `colima start`); keep the project inside your home folder so that `data/` is visible on the Mac.
 
 ```
 git clone https://github.com/sasilanz/NMS_GIA.git
@@ -26,17 +29,15 @@ cd NMS_GIA
 docker compose up -d --build
 ```
 
-Dann `http://127.0.0.1:5050` öffnen.
+- The database and all backups live in the folder **`./data`** next to `docker-compose.yml` (`data/nms.db`, `data/export/`). It survives rebuilds and updates. **To back up, just copy that folder.**
+- Stop: `docker compose down` (data is kept). Start: `docker compose up -d`. Logs: `docker compose logs -f`.
+- Update: `git pull && docker compose up -d --build`. The database is upgraded automatically on start.
+- Change the port: edit the left number under `ports` in `docker-compose.yml`, e.g. `"127.0.0.1:8080:5050"`.
+- The port is deliberately bound to `127.0.0.1`. There is no login: anyone who can reach the app can edit your data, so do not expose it to a network.
 
-- Die Datenbank und alle Sicherungen liegen im Ordner **`./data`** neben `docker-compose.yml` (`data/nms.db`, `data/export/`). Dieser Ordner bleibt beim Neubauen und Aktualisieren erhalten. **Zum Sichern genügt es, ihn zu kopieren.**
-- Stoppen: `docker compose down` (Daten bleiben). Starten: `docker compose up -d`. Logs: `docker compose logs -f`.
-- Aktualisieren auf eine neue Version: `git pull && docker compose up -d --build`. Die Datenbank wird beim Start bei Bedarf automatisch erweitert.
-- Port ändern: in `docker-compose.yml` die linke Zahl bei `ports` ändern, z. B. `"127.0.0.1:8080:5050"`.
-- Der Port ist absichtlich nur an `127.0.0.1` gebunden. Es gibt keinen Login. Wer die App im Netzwerk freigibt, gibt auch jedem dort Schreibzugriff.
+### Option B: Python directly
 
-### Variante B: Python direkt
-
-Voraussetzung: Python 3.10 oder neuer.
+Requires Python 3.10 or newer.
 
 ```
 git clone https://github.com/sasilanz/NMS_GIA.git
@@ -46,382 +47,127 @@ python3 -m venv .venv
 .venv/bin/python app.py                        # Windows: .venv\Scripts\python app.py
 ```
 
-Dann `http://127.0.0.1:5050` öffnen. Beenden mit Ctrl+C. Die Datenbank `nms.db` liegt im Projektordner.
+Open http://127.0.0.1:5050. Stop with Ctrl+C. The database `nms.db` is created in the project folder.
 
-**macOS-Komfort:** Doppelklick auf `start.command` startet den Server und öffnet den Browser, `stop.command` beendet ihn, `export.command` erstellt eine Sicherung. Beim ersten Mal ggf. Rechtsklick → „Öffnen“.
+**macOS shortcuts:** double-click `start.command` to start the server and open the browser, `stop.command` to stop it, `export.command` to create a backup (first time: right-click → Open).
 
-### Einstellungen (Umgebungsvariablen)
+### Settings (environment variables)
 
-| Variable | Standard | Bedeutung |
+| Variable | Default | Meaning |
 |---|---|---|
-| `NMS_DB` | `nms.db` | Pfad der Datenbankdatei |
-| `NMS_EXPORT_DIR` | `export` | Ordner für Sicherungen |
-| `NMS_HOST` | `127.0.0.1` | Adresse, auf der der Server lauscht (im Docker-Image `0.0.0.0`, von außen nur über die Port-Freigabe in `docker-compose.yml`) |
-| `NMS_PORT` | `5050` | Port |
+| `NMS_DB` | `nms.db` | path of the database file |
+| `NMS_EXPORT_DIR` | `export` | folder for backups |
+| `NMS_HOST` | `127.0.0.1` | address the server listens on (`0.0.0.0` inside the Docker image; from outside it is only reachable through the port mapping in `docker-compose.yml`) |
+| `NMS_PORT` | `5050` | port |
 
-### Neu anfangen / Datenbank zurücksetzen
+### Start over / reset the database
 
-Datenbank-Datei (bzw. den Ordner `data/`) löschen und die App neu starten, dann entsteht eine frische. Oder gezielt: `python3 init_db.py --neu --allianz "Meine ABC"` (löscht alle Daten!).
+Delete the database file (or the `data/` folder) and start the app again to get a fresh one. Or explicitly: `python3 init_db.py --neu --allianz "My ABC"` (deletes all data!).
 
-### Eigene Numbers-Liste importieren (optional)
+### Import your own Numbers list (optional)
 
-Wer bisher eine Tabelle in Numbers geführt hat: `export_numbers.py` exportiert sie als `galaxie_numbers.csv` (Spalten siehe unten, Abschnitt „Skripte“). Liegt diese Datei beim Anlegen der Datenbank im Projektordner, wird sie mit übernommen. Ohne die Datei startet alles leer, das ist der Normalfall.
+If you used to keep a Numbers table: `export_numbers.py` exports it as `galaxie_numbers.csv` (needs `pip install numbers-parser`; columns: Nr, Name, Kategorie, Entdeckt, Bewertung, Kürzel, Sternenystem, Eigene Raumstation, Basen, Extras). If that file is in the project folder when the database is created, it is imported too (visited flag, type, rating, abbreviation; free text goes into the galaxy note, and the "Clean up" page helps to turn it into systems and entries). Without the file everything starts empty, which is the normal case.
 
-### Datenquellen
+## Using the app
 
-- Galaxienliste (`galaxien_quelle_a.csv`): Nummern und Namen der 256 Galaxien. Einzelne Schreibweisen können abweichen, Namen lassen sich in der App korrigieren.
-- HotG-Hubs: aus dem [NMS-Fandom-Wiki](https://nomanssky.fandom.com/wiki/Hitchhikers_of_the_Galaxy) (Text dort unter [CC BY-SA](https://www.fandom.com/licensing)). Die mitgelieferte `hotg_hubs.csv` ist ein Stand zum Start, auf der Seite „HotG-Hubs“ holt „↻ Von Fandom aktualisieren“ den aktuellen Stand.
-- *No Man's Sky* ist eine Marke von Hello Games. Das Projekt ist inoffiziell.
+**Language:** the switch "Deutsch / English" is in the top bar of every page. Your choice is stored in a cookie; the first visit follows your browser language.
 
-## Server starten und stoppen (macOS, Variante B)
+### Galaxy grid (start page)
 
-Der Server startet **nicht von selbst**. Er läuft nur, solange du ihn gestartet hast. Nach einem Neustart des Macs oder wenn du das Terminalfenster schließt, ist er wieder aus.
+- Every galaxy is a tile with number, name and abbreviation. Tile colour = type: green Lush, turquoise Normal, red-orange Harsh, grey Empty, light grey unknown.
+- **Visited:** click the circle on a tile. Visited tiles get a pink border and a ticked circle. Saved instantly.
+- **Quick check:** the search box is focused on load. Type a number (`170`), a name or an abbreviation. With exactly one match the status is shown in big letters: "already visited" / "not visited yet", plus the number of entries and whether a HotG hub exists. **Esc** clears the search.
+- **Filters:** type (several at once), all / visited / not visited, "has base / station", "Alliance station …" (pick an alliance or any), "HotG hub". The filters are remembered by the browser. On the very first start the grid shows visited galaxies only (or all, if none is visited yet).
+- Tiles with a HotG hub carry a yellow "HotG" badge. The "⌂ n" counter shows how many entries a galaxy has.
+- "Search everything" searches bases, systems, planets and notes.
 
-**Starten:** Doppelklick auf `start.command` im Projektordner. Es öffnet sich ein Terminalfenster, und der Browser öffnet die Seite `http://127.0.0.1:5050`. Das Terminalfenster muss offen bleiben, solange du die App nutzt. Läuft der Server schon, öffnet der Doppelklick nur den Browser.
+### Galaxy page
 
-**Stoppen:** Eine dieser drei Möglichkeiten:
-1. Im Terminalfenster Ctrl+C drücken.
-2. Das Terminalfenster schließen.
-3. Doppelklick auf `stop.command`.
+Click a tile. Everything is saved as soon as you leave a field ("✓ saved" appears top right).
 
-**Von Hand im Terminal:**
-```
-cd NMS_GIA        # bzw. dein Projektordner
-.venv/bin/python app.py          # starten, Beenden mit Ctrl+C
-```
-Läuft er im Hintergrund und du findest ihn nicht: `lsof -ti tcp:5050 -sTCP:LISTEN` zeigt die Prozessnummer, `kill <Nummer>` beendet ihn.
+- **Header (coloured by type):** name, abbreviation, type, rating (1–5 stars), note and the big "Visited" button. A yellow banner shows the HotG hub of this galaxy (system, glyphs, discoverer), if there is one.
+- **Systems:** "+ System" adds a system. Each system has optional dropdowns for **life form** (Gek, Vy'keen, Korvax), **wealth** (1–3) and **conflict** (1–3), plus a note. "✕ System" deletes it with all its entries (after a confirmation). Naming scheme suggested by the placeholders: abbreviation + short name, e.g. `EZD Aibaba`.
+- **Entries** (base, mini base, space station, portal, other) live inside a system: type, name (scheme abbreviation + type + feature, e.g. `EZD Base Island`, the same name as in your teleporter), planet (text only; space stations have no planet field), alliance and note. "+ Space station (alliance)" creates a station of your own alliance directly.
+- **Alliance:** "none (personal)" for your own bases, otherwise pick the alliance. ★ marks your own alliance. Entries with an alliance get a coloured stripe (yellow = own alliance, pink = other).
+- "Delete galaxy …" at the bottom deletes the galaxy with everything in it (after a confirmation).
 
-**Läuft er?** Antwortet `http://127.0.0.1:5050` im Browser nicht, ist der Server aus. Dann einfach `start.command` öffnen.
+### Alliances
 
-Falls macOS beim ersten Doppelklick meldet, die Datei sei von einem nicht verifizierten Entwickler: Rechtsklick auf `start.command`, „Öffnen“, dann „Öffnen“ bestätigen. Das ist nur beim ersten Mal nötig.
+- **Overview** (button "Alliances"): every alliance with number of stations and galaxies, plus "+ Alliance".
+- **Alliance page:** all stations of an alliance across all galaxies, with a live filter. Click a galaxy to edit there. Name and note are editable. Exactly one alliance is "your own" (yellow button in the top bar of every page). You can switch it, and delete any other alliance (its stations stay, they just lose the alliance).
+- **Recording a station of another alliance:** create the alliance in the overview, then create an entry of type space station in its galaxy and choose the alliance. In the grid, the filter "Alliance station …" finds it.
 
-## Stand
+### HotG hubs
 
-| Schritt (laut Spec, Abschnitt 7) | Status |
+The page "HotG hubs" lists **all hubs of the Hitchhikers of the Galaxy community from the NMS wiki**, including galaxies you have not visited: galaxy, visited status, hub system, portal glyphs (hex, with a copy button), discoverer and your own entries. Filter by all / not visited / visited, or search by number, galaxy, system or discoverer. Galaxy 69 is a secret system without glyphs; the access note from the wiki is shown instead.
+
+**"Update from Fandom"** fetches the current list from the wiki (section "All HotG galactic hubs discovered so far") and replaces the local list, then tells you what is new, changed or removed. From a terminal: `.venv/bin/python hotg_import.py`. The data is kept in the table `hotg_hub` and as a copy in `hotg_hubs.csv`; hubs for galaxies that do not exist in your database are skipped.
+
+### Search
+
+"Search everything" finds galaxies, systems and entries (name, planet, note, type, alliance). Several words narrow the result, case and accents do not matter. Each hit shows where it matched and jumps to the right place in the galaxy page.
+
+### Backup and restore
+
+Open "Backup" and click "Back up now". Every export is a folder `export/YYYY-MM-DD_HHMMSS/` (`data/export/` with Docker) containing:
+
+| File | Content |
 |---|---|
-| 1. Datenbank anlegen und Import | **fertig** |
-| 2. Galaxie-Raster mit Farben, Suche, Filtern | **fertig** |
-| 3. Galaxie-Ansicht | **fertig** |
-| 4. Anlegen, Bearbeiten, Löschen | **fertig** |
-| Allianz-Ansicht (aus Abschnitt 3.3 der Spec) | **fertig** |
-| 5. Export und Backup | **fertig** |
-| 5. Globale Suche | **fertig** |
-| HotG-Hubs (Liste aus dem NMS-Wiki, mit Aktualisieren-Knopf) | **fertig** |
-| Allianz-Übersicht und Allianz-Filter im Raster | **fertig** |
-| Systemattribute (Lebensform, Wealth, Konflikt) | **fertig** |
+| `nms.db` | complete copy of the database, **the one that matters** (for restoring) |
+| `nms.json` | all tables as JSON (including `hotg_hub`) |
+| `galaxien.csv`, `systeme.csv`, `eintraege.csv`, `allianzen.csv` | readable tables for Numbers / Excel (names instead of IDs) |
 
-### Welche Python-Funktion startet den Server?
+Other ways: double-click `export.command`, or `.venv/bin/python exporter.py`. Old exports are never deleted automatically.
 
-Am Ende von `app.py` steht:
+**Restore:** stop the server, rename the current `nms.db`, copy the `nms.db` from the export folder to the project folder (Docker: into `data/`), start the server. Back up before bigger changes: deletions (✕) cannot be undone, and an export on the same disk is only a copy, so copy `export/` somewhere else now and then.
 
-```python
-if __name__ == '__main__':
-    app.run(host=HOST, port=PORT, debug=False)
-```
+## Data model
 
-- **`app.run(...)`** startet den eingebauten Flask-Webserver. Der Aufruf **blockiert**: Das Terminal bleibt belegt, und der Server läuft, bis du Ctrl+C drückst oder das Fenster schließt.
-- **`HOST = '127.0.0.1'`** bedeutet: nur dieser Mac erreicht den Server, kein Zugriff aus dem WLAN.
-- **`PORT = 5050`** ist die Portnummer. Beides steht oben in `app.py` (Konstanten `HOST` und `PORT`). Wer den Port ändert, muss auch die Adresse im Browser und in `start.command` und `stop.command` ändern.
-- Die Zeile `if __name__ == '__main__'` sorgt dafür, dass der Server nur startet, wenn man `app.py` direkt aufruft (`.venv/bin/python app.py`), nicht wenn die Datei von woanders importiert wird.
+Five SQLite tables. Hierarchy **galaxy → system → entry**; planets are just a text field on the entry.
 
-### Läuft der Server? Port prüfen
+- `galaxy`: `nr` (primary key), `name`, `kuerzel` (abbreviation), `typ` (Lush/Normal/Harsh/Empty), `besucht` (0/1), `bewertung` (1–5), `notiz`
+- `system`: `id`, `galaxy_nr` → galaxy, `name`, `lebensform` (Gek, Vy'keen, Korvax), `wealth` (1–3), `konflikt` (1–3), `notiz`
+- `eintrag` (entry): `id`, `system_id` → system, `typ` (Basis, Mini-Basis, Raumstation, Portal, Sonstiges; stored in German and shown translated), `name`, `planet`, `allianz_id` → allianz (empty = personal), `notiz`
+- `allianz`: `id`, `name`, `eigene` (1 = your own alliance, exactly one), `notiz`
+- `hotg_hub`: `galaxy_nr` (key, → galaxy), `system`, `entdeckt_von`, `glyphen` (hex), `zugang` (access note for secret systems). Reference data from the wiki.
 
-Alle Befehle im Terminal:
+Deleting a galaxy deletes its systems and entries. Deleting an alliance keeps its entries and only clears the link. Older databases are upgraded automatically on start (new columns/tables are added). Look inside with `sqlite3 nms.db ".schema"`.
 
-```
-lsof -nP -iTCP:5050 -sTCP:LISTEN     # lauscht etwas auf Port 5050? Zeigt Prozess und Nummer (PID)
-curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:5050/    # 200 = läuft, sonst keine Antwort
-ps aux | grep "[a]pp.py"             # läuft ein Python-Prozess mit app.py?
-```
+## Project layout
 
-- Ausgabe von `lsof` mit einer Zeile (`Python ... 127.0.0.1:5050 (LISTEN)`): Der Server läuft. Keine Ausgabe: Er läuft nicht.
-- `curl` gibt `200` aus, wenn die Startseite antwortet. Gibt es `000` aus (oder „Connection refused“), läuft der Server nicht.
-- Meldung beim Start „Address already in use“: Auf Port 5050 läuft schon etwas, meist ein alter Server. Mit `lsof` die PID suchen und mit `kill <PID>` beenden.
-- Am Mac ist Port 5000 vom AirPlay-Empfänger belegt, deshalb wurde 5050 gewählt.
-
-## Bedienung der App
-
-Adresse: `http://127.0.0.1:5050` (Server vorher starten, siehe oben).
-
-**Startseite = Galaxie-Raster.** Alle Galaxien als Kacheln. Farbe der Kachel = Typ:
-
-| Farbe | Typ |
+| File | Purpose |
 |---|---|
-| grün | Lush |
-| türkis | Normal |
-| rot-orange | Harsh |
-| hellgrau | Empty |
-| weiß-grau | Typ unbekannt |
-
-**Schnellcheck „War ich in dieser Galaxie schon?“**
-1. Seite öffnen. Das Suchfeld ist schon aktiv, einfach lostippen.
-2. Nummer eingeben (z. B. `170`) oder Namen oder Kürzel (z. B. `ezd`).
-3. Bei genau einem Treffer steht oben groß: „✓ schon besucht“ oder „noch nicht besucht“, plus die Zahl der Einträge.
-4. **Escape** leert die Suche. Tippst du, ohne ins Feld zu klicken, springt der Cursor automatisch ins Suchfeld.
-
-**Besucht setzen oder zurücknehmen:** Auf den Kreis oben rechts in der Kachel klicken. Besuchte Kacheln haben einen rosa Rahmen und ein gefülltes Häkchen. Die Änderung wird sofort in `nms.db` gespeichert, ein Speichern-Knopf ist nicht nötig.
-
-**Filter** (Leiste unter dem Suchfeld, Klick schaltet ein und aus):
-- Typ: Lush, Normal, Harsh, Empty, mehrere gleichzeitig möglich.
-- **alle / besucht / nicht besucht:** Eines davon ist immer aktiv. „alle“ zeigt alle Galaxien, auch die nicht besuchten.
-- hat Basis / Station: zeigt nur Galaxien mit eingetragenen Einträgen.
-- **🚀 HotG-Hub:** zeigt nur Galaxien, in denen es einen HotG-Hub gibt (auch nicht besuchte). Diese Kacheln tragen unten links eine gelbe „HotG“-Marke.
-- **Allianz-Station …:** Auswahl einer Allianz (oder „irgendeine Allianz“). Zeigt nur Galaxien, in denen du eine Station dieser Allianz erfasst hast.
-- Die Zahl „x von y“ neben dem Suchfeld zeigt, wie viele Kacheln gerade sichtbar sind. Suche und Filter wirken gemeinsam.
-
-**Galaxie öffnen:** Auf eine Kachel klicken (nicht auf den Kreis, der schaltet nur „besucht“). Mit „← Raster“ oben links geht es zurück, mit „‹ 169“ und „171 ›“ zur vorherigen und nächsten Galaxie.
-
-**Weitere Knöpfe oben:** „🤝 Allianzen“ (Übersicht aller Allianzen), „🚀 HotG-Hubs“ (alle HotG-Hubs), „🔍 Alles durchsuchen“, „Sicherung“. Einen Knopf „+ Galaxie“ gibt es nicht mehr, weil alle 256 Galaxien erfasst sind. Eine zusätzliche Galaxie ließe sich nur über die Schnittstelle `POST /api/galaxy` anlegen.
-
-## Bedienung der Galaxie-Ansicht
-
-Alles, was du änderst, wird **sofort gespeichert**, sobald du das Feld verlässt (Tab oder Klick daneben). Oben rechts steht kurz „✓ gespeichert“. Bei einem Fehler steht dort ein roter Hinweis, zum Beispiel wenn der Name leer ist.
-
-**Kopf (farbig nach Typ):** Name, Kürzel, Typ, Bewertung (1 bis 5 Sterne), Notiz und der große Knopf „Besucht“. Hier korrigierst du falsche Galaxienamen. In der Notiz steht noch der Freitext aus der alten Numbers-Liste (Basen, Eigene Raumstation, Extras). Den kannst du von dort aus in Systeme und Einträge umwandeln und danach aus der Notiz löschen.
-
-**Systeme:** „+ System“ legt ein neues System an. Name und Notiz sind direkt editierbar. Dazu gibt es drei optionale Dropdowns: **Lebensform** (Gek, Vy'keen, Korvax), **Wealth** (1 bis 3, niedrig bis hoch) und **Konflikt** (1 bis 3, niedrig bis hoch). „✕ System“ löscht das System **mit allen seinen Einträgen** (vorher kommt eine Rückfrage). Namensschema in den Platzhaltern: Kürzel + Merkname, z. B. `EZD Aibaba`.
-
-**Einträge** (Basis, Mini-Basis, Raumstation, Portal, Sonstiges) liegen in einem System:
-- „+ Basis / Eintrag“ legt einen Eintrag vom Typ Basis an, den Typ kannst du danach ändern.
-- „+ Raumstation (Name deiner Allianz)“ legt gleich eine Raumstation deiner eigenen Allianz an.
-- Felder: Typ, Name (Schema Kürzel + Typ + Merkmal, z. B. `EZD Basis Insel`, wie im Teleporter), Planet (nur Text), Allianz, Notiz. **Bei Typ „Raumstation“ gibt es kein Planetenfeld**, weil eine Station keinen Planeten hat. Ein früher eingetragener Planet bleibt in der Datenbank erhalten und erscheint wieder, wenn der Typ zurückgestellt wird.
-- **Allianz:** „keine (persönlich)“ für eigene Basen, sonst die Allianz auswählen. ★ markiert deine eigene Allianz. Einträge mit Allianz haben links einen farbigen Streifen (gelb = eigene Allianz, rosa = andere).
-- „✕“ rechts löscht den Eintrag (mit Rückfrage).
-
-**Galaxie löschen:** Ganz unten „Galaxie löschen …“. Löscht auch alle Systeme und Einträge darin (mit Rückfrage).
-
-## Bedienung der Allianz-Ansicht
-
-**Öffnen:** Der gelbe Knopf „★ Allianzname“ oben links ist auf jeder Seite da und führt direkt zu deiner eigenen Allianz. Alternativ in einem Eintrag auf „Allianz öffnen →“ klicken.
-
-**Liste:** Alle Stationen der Allianz über alle Galaxien, sortiert nach Galaxie-Nummer: Galaxie, System, Typ, Name, Planet, Notiz. Das Suchfeld darüber filtert live. Ein Klick auf die Galaxie öffnet sie zum Bearbeiten. Hier in der Liste wird nichts bearbeitet.
-
-**Übersicht:** Der Knopf „🤝 Allianzen“ (Startseite) oder „Alle Allianzen“ führt zu `/allianzen`: jede Allianz mit Zahl der Stationen und Galaxien, plus „+ Allianz“.
-
-**Fremde Allianz-Station erfassen:** Allianz in der Übersicht anlegen, dann in der Galaxie einen Eintrag vom Typ Raumstation anlegen und dort die Allianz auswählen. Im Raster findest du sie mit dem Filter „Allianz-Station …“.
-
-**Allianz wechseln:** Die Auswahl oben zeigt alle Allianzen mit der Zahl ihrer Stationen, ★ = eigene.
-
-**Neue Allianz:** „+ Allianz“ und Namen eingeben. Danach kannst du sie bei Einträgen in der Galaxie-Ansicht auswählen.
-
-**Name und Notiz** der Allianz sind direkt editierbar und werden sofort gespeichert.
-
-**Eigene Allianz festlegen:** Bei einer anderen Allianz unten „Als meine eigene Allianz festlegen“. Es gibt immer genau eine eigene. Der gelbe Knopf oben zeigt danach auf die neue.
-
-**Allianz löschen:** Unten „Allianz löschen …“ bei einer nicht eigenen Allianz. Die Stationen bleiben in ihren Galaxien erhalten, gehören dann aber keiner Allianz mehr. Die eigene Allianz lässt sich nicht löschen.
-
-## Bedienung der HotG-Hubs („Hitchhikers of the Galaxy“)
-
-Die Seite `/hotg` (Knopf „🚀 HotG-Hubs“) listet **alle Hubs der Community aus dem NMS-Wiki**, auch in Galaxien, die du noch nicht besucht hast: Nummer, Galaxie, Besucht-Status, Hub-System, Portal-Glyphen (Hex, mit „kopieren“-Knopf), Entdecker und deine eigenen Einträge in der Galaxie. Die Galaxie ist verlinkt. Galaxie 69 hat ein geheimes System ohne Glyphen, dort steht der Zugangshinweis.
-
-- **Filter:** alle / nicht besucht / besucht, dazu eine Suche über Nummer, Galaxie, System und Entdecker. Der Filter wird im Browser gemerkt.
-- **↻ Von Fandom aktualisieren:** holt die Liste jetzt frisch aus dem Wiki (Abschnitt „All HotG galactic hubs discovered so far“) und ersetzt die lokale Liste. Danach steht da, was neu, geändert oder entfernt ist. Der Abruf läuft über die MediaWiki-API, weil die normale Wiki-Seite für Skripte gesperrt ist. Der Besitzer der Community (Ronnie) lädt neue Galaxien dort selbst hoch, dein Stand erscheint also erst nach seinem Upload.
-- Im Terminal: `.venv/bin/python hotg_import.py`.
-- In der Galaxie-Ansicht steht oben ein gelber Hinweis mit Hub, Glyphen und Entdecker, wenn es dort einen Hub gibt.
-- Die Daten liegen in der Tabelle `hotg_hub` und zusätzlich als Kopie in `hotg_hubs.csv` (wird beim Aktualisieren neu geschrieben). Ist die Tabelle beim Start leer, wird sie aus der CSV gefüllt. Hubs in Galaxien, die es in deiner Datenbank nicht gibt, werden übersprungen.
-
-## Sicherung (Export) und Wiederherstellen
-
-**Der Ordner `export/`** wird beim ersten Export automatisch angelegt, im Projektordner unter `export/` (bei Docker `data/export/`). Jeder Export bekommt darin einen eigenen Unterordner mit Datum und Uhrzeit, z. B. `export/2026-11-06_144754/`. Alte Exporte werden nie automatisch gelöscht.
-
-**Inhalt eines Exports:**
-
-| Datei | Inhalt |
-|---|---|
-| `nms.db` | vollständige Kopie der Datenbank, **die wichtigste Datei** (zum Wiederherstellen) |
-| `nms.json` | alle Daten als JSON (alle Tabellen, auch `hotg_hub`) |
-| `galaxien.csv` | alle Galaxien (Nr, Name, Kürzel, Typ, Besucht, Bewertung, Notiz) |
-| `systeme.csv` | alle Systeme mit Galaxie, Lebensform, Wealth und Konflikt |
-| `eintraege.csv` | alle Einträge mit Galaxie, System und Allianz als Namen (lesbar, kein Nachschlagen nötig) |
-| `allianzen.csv` | alle Allianzen |
-
-Die CSV-Dateien öffnen sich in Numbers und Excel mit richtigen Umlauten.
-
-**Export auslösen (drei Wege, alle funktionieren bei laufendem Server):**
-1. **Im Browser:** Im Raster oben auf „Sicherung“, dann „Jetzt sichern“. Die Seite listet alle vorhandenen Exporte und lässt jede Datei einzeln herunterladen.
-2. **Doppelklick auf `export.command`:** sichert und öffnet den neuen Ordner im Finder.
-3. **Im Terminal:** `.venv/bin/python exporter.py`
-
-**Wiederherstellen** (z. B. nach versehentlichem Löschen):
-1. Server stoppen (`stop.command`).
-2. Die aktuelle `nms.db` zur Sicherheit umbenennen, z. B. in `nms-kaputt.db`.
-3. Die `nms.db` aus dem gewünschten Export-Ordner in den Projektordner kopieren (bei Docker nach `data/`).
-4. Server starten (`start.command`).
-
-**Wann sichern?** Vor größeren Änderungen, besonders vor dem Aufräumen der alten Freitexte und bevor du etwas löschst. Gelöschtes (✕) ist sonst nicht wiederherstellbar. Der Export ist nur eine Kopie auf demselben Mac. Für echten Schutz den Ordner `export/` gelegentlich auf eine externe Platte oder in die Cloud kopieren.
-
-## Aufräumen der alten Freitexte
-
-Der Import hat den Freitext aus der Numbers-Liste unverändert in die Notiz der Galaxie geschrieben, je eine Zeile pro Spalte (`Basen: …`, `Eigene Raumstation: …`, `Extras: …`, `Sternenystem: …`). Daraus sollen nach und nach echte Systeme und Einträge werden.
-
-**Die Aufräum-Liste:** Im Raster oben auf „Aufräumen (39)“ (die Zahl ist die Menge der noch offenen Galaxien). Die Liste zeigt jede Galaxie mit altem Text, den Text lesbar nach Spalte getrennt, daneben „Öffnen →“. Filter: Suchfeld in den alten Texten, „noch ohne Systeme“, „besucht“.
-
-**So gehst du pro Galaxie vor:**
-1. „Öffnen →“ klicken. Oben in der Notiz steht der alte Text zum Abschreiben.
-2. „+ System“ anlegen (Namensschema `Kürzel Merkname`, z. B. `EZD Aibaba`) und darin „+ Basis / Eintrag“ oder „+ Raumstation (Allianzname)“.
-3. Typ, Name (wie im Teleporter, `Kürzel Typ Merkmal`), Planet und Notiz ausfüllen.
-4. Die erledigten Zeilen aus der Galaxie-Notiz **löschen**. Andere Notizen (zum Beispiel „Bewertung (Original): ?“) kannst du behalten.
-
-Eine Galaxie verschwindet aus der Liste, sobald in ihrer Notiz keine Zeile mehr mit `Basen:`, `Eigene Raumstation:`, `Extras:` oder `Sternenystem:` und Text dahinter steht. Die Liste ist also dein Fortschritt: Er ist von selbst erledigt, wenn die Zahl 0 ist. Der Knopf im Raster verschwindet dann ebenfalls.
-
-**Tipp:** Vor dem Aufräumen einen Export machen, und zwischendurch wieder (siehe Abschnitt Sicherung). Beim Löschen von Zeilen aus der Notiz gibt es kein Rückgängig.
-
-**Technik:** `alttext_zeilen(notiz)` in `app.py` erkennt die Zeilen des Imports mit einem Muster und zerlegt sie in Spalte und Text. `aufraeumen()` (Route `/aufraeumen`) baut daraus die Liste mit der Zahl der schon angelegten Systeme und Einträge je Galaxie.
-
-## Bedienung der Suche („Wo ist meine Basis?“)
-
-**Öffnen:** Im Raster oben auf „🔍 Alles durchsuchen“, oder in jeder Ansicht auf „🔍 Suche“. Wenn du im Raster etwas ins Suchfeld tippst, erscheint darunter ein Link, der dasselbe in allem sucht.
-
-**Suchen:** Einfach lostippen, die Treffer erscheinen live. Gesucht wird in:
-- **Einträgen** (Basen, Stationen …): Name, Planet, Notiz, Typ und Allianzname
-- **Systemen:** Name und Notiz
-- **Galaxien:** Nummer, Name, Kürzel und Notiz. Dazu gehören auch die **alten Texte aus der Numbers-Liste**, die noch in den Galaxie-Notizen stehen. So findest du auch Orte, die du noch nicht als eigenen Eintrag angelegt hast.
-
-**Wie die Treffer aussehen:** Die Treffer sind gruppiert (Einträge, Systeme, Galaxien). Bei jedem Eintrag steht der ganze Weg: *Galaxie › System › Planet*, dazu ein Textausschnitt mit gelb markierten Treffern und die Angabe, in welchem Feld es gepasst hat. Ein Klick öffnet die Galaxie und springt direkt zum Eintrag oder System, das kurz gelb umrandet wird.
-
-**Regeln:**
-- Mehrere Wörter müssen **alle** vorkommen: „ezd insel“ findet nur Treffer mit beiden Wörtern.
-- Groß/Klein ist egal. Umlaute: „ü“ wird wie „u“ behandelt, außerdem findet „ue“ ein „ü“ (also „blaugruen“ findet „Blaugrün“, „strasse“ findet „Straße“).
-- Eine Zahl findet genau diese Galaxie (170 findet nur Galaxie 170, nicht 17 oder 1700).
-- Angezeigt werden höchstens die ersten 300 Treffer.
-
-**Technik:** `suche(anfrage)` in `app.py` liest alle Galaxien, Systeme und Einträge und vergleicht sie in Python mit den Wörtern. **`falten(text)`** macht Text klein und entfernt Akzente (Länge bleibt gleich, damit die gelbe Markierung an der richtigen Stelle sitzt), **`varianten(wort)`** erzeugt die Schreibweisen (ue→u, ss→s), **`schnipsel()`** schneidet den Textausschnitt um den Treffer. Schnittstelle: `GET /api/suche?q=…`. Bei deiner Datenmenge (einige hundert Zeilen) ist das sofort fertig, ohne eigenen Suchindex.
-
-**Datensicherung:** Alle Daten liegen in der einen Datei `nms.db`. Zum Sichern bei gestopptem Server die Datei kopieren.
-
-## Einrichtung und Port
-
-Der Server ist nur lokal erreichbar. Port 5050, weil 5000 am Mac von AirPlay belegt ist.
-
-Einmalig einrichten, falls `.venv` fehlt: `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`.
-
-### Galaxie-Raster (Startseite)
-
-- Alle Galaxien als Kacheln mit Nummer, Name, Kürzel, Farbe nach Typ.
-- Besucht = rosa Rahmen und gefülltes Häkchen. Ein Klick auf das Häkchen schaltet um und speichert sofort in der Datenbank.
-- Suchfeld ist beim Öffnen fokussiert. Eine Zahl zeigt genau diese Galaxie, Text sucht in Name und Kürzel. Bei genau einem Treffer steht oben groß „schon besucht“ oder „noch nicht besucht“. Escape leert die Suche.
-- Filter: Typ (mehrere möglich), alle / besucht / nicht besucht (genau eines aktiv), hat Basis / Station.
-- **Standard und Merken:** Beim allerersten Öffnen ist „besucht“ eingeschaltet, du siehst also nur deine besuchten Galaxien. **Alle Galaxien** siehst du mit dem Knopf „alle“ in der Filterleiste. Die Filter (Typ, besucht, hat Basis) merkt sich der Browser dauerhaft, die Suche und die Scrollposition bleiben für den offenen Tab erhalten. Kommst du aus einer Galaxie zurück, ist das Raster so wie du es verlassen hast. Ein neuer Tab oder ein neuer Tag startet mit leerem Suchfeld, aber mit deinen Filtern. „✕ Filter zurücksetzen“ neben der Zahl löscht die Suche und alle Filter und stellt auf „alle“.
-- **Schnellcheck trotz Filter „besucht“:** Findet deine Suche unter den besuchten nichts (z. B. eine Galaxie, in der du noch nie warst), werden die Treffer trotzdem angezeigt, mit dem Hinweis, dass der Filter ignoriert wird. So bekommst du auch dort die Antwort „noch nicht besucht“, statt „nichts gefunden“.
-- Das Zählersymbol (⌂) erscheint erst, wenn Einträge in der Datenbank stehen. Bisher stehen die Basen nur als Text in der Notiz, deshalb zeigt der Filter „hat Basis“ aktuell nichts an.
-
-## Dateien
-
-| Datei | Zweck |
-|---|---|
-| `NMS-Galaxie-Tracker-SPEC.md` | Spezifikation |
-| `README.md` | diese Datei |
-| `nms.db` | SQLite-Datenbank, **enthält alle Daten** (entsteht beim ersten Start, nicht im Git-Repo) |
-| `Dockerfile`, `docker-compose.yml`, `.dockerignore` | Docker-Betrieb (Daten im Ordner `data/`) |
-| `start.command` | Doppelklick: Server starten und Browser öffnen |
-| `stop.command` | Doppelklick: Server beenden |
-| `app.py` | Flask-Server: Raster-Seite und Besucht-Umschalter |
-| `templates/index.html` | Raster-Seite (HTML, CSS, JavaScript) |
-| `templates/galaxy.html` | Galaxie-Ansicht mit Bearbeiten (HTML, CSS, JavaScript) |
-| `templates/allianz.html` | Allianz-Ansicht (HTML, CSS, JavaScript) |
-| `templates/allianzen.html` | Allianz-Übersicht (HTML, CSS, JavaScript) |
-| `templates/hotg.html` | HotG-Hubs (HTML, CSS, JavaScript) |
-| `templates/suche.html` | Globale Suche (HTML, CSS, JavaScript) |
-| `templates/aufraeumen.html` | Aufräum-Liste der alten Freitexte (HTML, CSS, JavaScript) |
-| `requirements.txt` | Python-Abhängigkeiten (Flask) |
-| `exporter.py` | Sicherung: erzeugt Exporte in `export/` (Terminal oder aus `app.py`) |
-| `export.command` | Doppelklick: Export erstellen und Ordner im Finder öffnen |
-| `export/` | die Exporte, ein Unterordner pro Sicherung (entsteht automatisch) |
-| `hotg_import.py` | holt die HotG-Hub-Liste aus dem NMS-Wiki und speichert sie in `nms.db` und `hotg_hubs.csv` |
-| `hotg_hubs.csv` | Kopie der HotG-Hub-Liste (Stand des letzten Abrufs) |
-| `init_db.py` | legt `nms.db` an und importiert die Galaxien |
-| `export_numbers.py` | exportiert die Numbers-Liste einmalig nach CSV |
-| `galaxien_quelle_a.csv` | Quelle A: Galaxienliste (Nummer, Name, Typ) (ursprünglich per OCR aus einer gescannten Liste gelesen) |
-| `galaxie_numbers.csv` | Quelle B (optional, nicht im Repo): eigene Numbers-Liste als CSV |
-
-## Datenmodell
-
-Fünf Tabellen, Hierarchie **Galaxie → System → Eintrag**. Planeten sind nur ein Textfeld am Eintrag.
-
-- **`galaxy`**: `nr` (Primärschlüssel), `name`, `kuerzel`, `typ` (Lush/Normal/Harsh/Empty), `besucht` (0/1), `bewertung` (1–5), `notiz`
-- **`system`**: `id`, `galaxy_nr` → galaxy, `name`, `lebensform` (Gek, Vy'keen, Korvax, leer erlaubt), `wealth` (1–3), `konflikt` (1–3), `notiz`
-- **`eintrag`**: `id`, `system_id` → system, `typ` (Basis, Mini-Basis, Raumstation, Portal, Sonstiges), `name`, `planet`, `allianz_id` → allianz (leer = persönliche Basis), `notiz`
-- **`allianz`**: `id`, `name`, `eigene` (1 = meine eigene Allianz, genau eine), `notiz`
-- **`hotg_hub`**: `galaxy_nr` (Primärschlüssel, → galaxy), `system`, `entdeckt_von`, `glyphen` (Hex), `zugang` (Hinweis bei geheimen Systemen). Referenzdaten aus dem Wiki, keine eigenen Einträge. Die Tabelle wird beim Start angelegt, die drei Systemspalten werden bei einer älteren Datenbank automatisch nachgerüstet.
-
-Löscht man eine Galaxie, werden ihre Systeme und deren Einträge mit gelöscht. Löscht man eine Allianz, bleiben ihre Einträge erhalten, nur der Verweis wird leer.
-
-## Skripte
-
-### `init_db.py`
-
-Baut die Datenbank auf. Nur Standardbibliothek, kein `pip install` nötig.
-
-```
-python3 init_db.py          # bricht ab, wenn nms.db schon existiert
-python3 init_db.py --neu    # löscht nms.db und baut sie neu auf (alle Daten weg!)
-```
-
-Wichtig: `--neu` löscht auch alles, was später in der App eingetragen wurde. Vor dem Aufruf vorher `nms.db` sichern.
-
-Funktionen und Ablauf:
-
-- **`lies(pfad)`** liest eine CSV-Datei und gibt eine Liste von Zeilen (als Dictionaries mit den Spaltennamen) zurück.
-- **`main()`** macht der Reihe nach:
-  1. Schutz: Existiert `nms.db`, bricht das Skript ab, außer es wird mit `--neu` gestartet.
-  2. Legt die Tabellen an (Konstante `SCHEMA`).
-  3. **Quelle A** einlesen: alle Galaxien (Nummer, Name, Typ), alle starten als nicht besucht.
-  4. **Quelle B** (Numbers) einlesen und über die Nummer zuordnen:
-     - **Name:** Der Numbers-Name hat Vorrang vor Quelle A. Abweichungen kommen in die Abweichungsliste.
-     - **Typ:** `Kategorie` wird zu `typ`. Unbekannte Werte (z. B. `???`) werden gemeldet, der Typ aus Quelle A bleibt.
-     - **Besucht:** `Entdeckt` = `X` oder `x` ergibt `besucht = 1`.
-     - **Kürzel:** wird übernommen.
-     - **Bewertung:** Die Anzahl der Sterne `*` bis `*****` ergibt 1 bis 5. Andere Werte (`?`, `???`, `Magenta`) ergeben `NULL`, der Originalwert steht in der Notiz.
-     - **Freitexte:** `Sternenystem`, `Eigene Raumstation`, `Basen` und `Extras` landen unverändert in der Notiz der Galaxie, je eine Zeile mit der Spaltenbezeichnung davor. Sie werden **nicht** automatisch zerlegt.
-     - Zeilen ohne Namen und die Zeile „NMS Freundescode“ werden ignoriert.
-  5. Schreibt alle Galaxien in die Tabelle `galaxy` und legt die eigene Allianz (`--allianz`, Standard „Meine Allianz“) mit `eigene = 1` an.
-  6. Gibt eine Kontrolle aus: Anzahl Galaxien, Anzahl besucht, Anzahl mit Notiz, Anzahl ohne Typ, die Abweichungsliste und Galaxien aus Numbers, die in Quelle A fehlen.
-
-Konstanten am Dateianfang: `DB` (Dateiname der Datenbank), `QUELLE_A` und `QUELLE_B` (Pfade der CSV-Dateien), `TYPEN` (erlaubte Galaxientypen).
-
-### `export_numbers.py`
-
-Liest die Numbers-Datei und schreibt die Galaxienzeilen als CSV. Muss nur laufen, wenn sich die Numbers-Liste ändert. Braucht das Paket `numbers-parser`.
-
-```
-pip install numbers-parser
-python3 export_numbers.py MeineListe.numbers galaxie_numbers.csv
-```
-
-Übernommen werden die Spalten Name, Kategorie, Entdeckt, Bewertung, Kürzel, Sternenystem, Eigene Raumstation, Basen und Extras. Nur Zeilen mit einer Nummer in der ersten Spalte werden exportiert, also keine Überschrift, kein Freundescode und keine Summenzeile.
-
-## Datenquellen und bekannte Eigenheiten
-
-- **Quelle A** (`galaxien_quelle_a.csv`) wurde ursprünglich per OCR aus einer gescannten Liste gelesen und mit einer weiteren Liste abgeglichen. Die Namen sind nur bei den Galaxien aus Numbers von mir geprüft, bei allen anderen kann die Schreibweise abweichen. Falsche Namen werden später in der App korrigiert.
-- **256 Galaxien:** Die PDF-Liste führte 257, die Datenbank enthält die Galaxien 1 bis 256 (wie auch das HotG-Wiki). Eine Galaxie 257 gibt es nicht.
-- **Typ von #256 und #257:** In den PDF-Listen „???“. Numbers hat #256 = Normal, bei #257 steht „???“, deshalb ist #257 ohne Typ.
-- **Systemnamen** stehen in Numbers in der Spalte „Eigene Raumstation“, nicht in „Sternenystem“ (die ist leer).
-- **Kernfarbe** („Core Color“, Farbe des Galaxienkerns) ist nicht Teil des Modells, kann später als Feld `kernfarbe` ergänzt werden.
-
-## Datenbank ansehen
-
-```
-sqlite3 nms.db "SELECT nr, name, typ, besucht FROM galaxy WHERE besucht = 1 ORDER BY nr"
-sqlite3 nms.db ".schema"
-```
-
-### `app.py`
-
-- **`FARBEN`** enthält alle Farben der Oberfläche an einer Stelle (Lush, Normal, Harsh, Empty, ohne Typ, besucht). Sie werden als CSS-Variablen in die Seite geschrieben. Zum Ändern nur hier editieren.
-- **`db()`** öffnet pro Anfrage eine Datenbankverbindung, **`close_db()`** schließt sie wieder.
-- **`galaxien()`** liest alle Galaxien samt Zähler der Einträge (Systeme und Einträge werden per Join gezählt).
-- **`raster()`** (Route `/`) liefert die Startseite.
-- **`besucht_umschalten(nr)`** (Route `POST /api/galaxy/<nr>/besucht`) schaltet `besucht` um und antwortet mit dem neuen Wert, bei unbekannter Nummer mit 404.
-- **`galaxie_ansicht(nr)`** (Route `/galaxy/<nr>`) liefert die Galaxie-Seite, **`galaxie_komplett(nr)`** holt Galaxie, Systeme, Einträge, Allianzen und die Nachbar-Nummern aus der Datenbank.
-- **`aendern(tabelle, schluessel, id, daten, pruefer)`** ist die gemeinsame Speicherfunktion: Sie ändert nur erlaubte Felder, prüft jeden Wert und gibt die gespeicherte Zeile zurück. Die Prüfer **`pruefe_galaxy`**, **`pruefe_system`**, **`pruefe_eintrag`** legen fest, welche Felder änderbar sind und welche Werte gelten (z. B. Bewertung 1 bis 5, Eintragstypen). Leere Texte werden zu NULL, Namen dürfen nicht leer sein. Fehler kommen als Meldung zurück (`Eingabefehler`, HTTP 400).
-- **Export:** Die Arbeit macht **`exporter.py`**. **`erstelle_export()`** legt den Zeitstempel-Ordner an, kopiert die Datenbank mit der SQLite-Backup-Funktion (konsistent, auch bei laufendem Server), schreibt JSON und CSV und gibt Ordner, Dateien und Zeilenzahlen zurück. **`liste_exporte()`** listet die vorhandenen Exporte. In `app.py`: Seite `/export`, `POST /api/export` (erstellt einen Export) und `/export/datei/<ordner>/<datei>` (Download, nur echte Export-Ordner und die bekannten Dateinamen).
-- **HotG:** **`hotg_vorbereiten()`** legt beim Start `hotg_hub` an, füllt sie bei Bedarf aus `hotg_hubs.csv` und rüstet die Systemspalten nach. **`hotg_seite()`** (Route `/hotg`), **`hotg_aktualisieren()`** (`POST /api/hotg/aktualisieren`) ruft **`hotg_import.py`** auf (`lade_wikitext()`, `parse()`, `speichern()`).
-- **Allianz-Übersicht:** **`allianzen_uebersicht()`** (Route `/allianzen`) zählt Stationen und Galaxien je Allianz. Im Raster trägt jede Kachel die IDs ihrer Allianzen (`data-al`) für den Allianz-Filter.
-- **Allianz:** **`allianz_komplett(aid)`** holt die Allianz, ihre Stationen (Join über Eintrag, System und Galaxie) und die Auswahlliste mit Anzahl. Routen: `/allianz` (leitet zur eigenen Allianz weiter), `/allianz/<id>`. **`eigene_allianz_fuer_alle_seiten()`** (Context-Processor) stellt die eigene Allianz allen Seiten für den festen Link bereit. Schnittstellen: `POST /api/allianz`, `PATCH` und `DELETE /api/allianz/<id>`, `POST /api/allianz/<id>/eigene` (setzt die eigene Allianz, die anderen werden zurückgesetzt).
-- **Schnittstellen (alle JSON):** `POST /api/galaxy` (anlegen), `PATCH` und `DELETE /api/galaxy/<nr>`, `POST /api/galaxy/<nr>/system`, `PATCH` und `DELETE /api/system/<id>`, `POST /api/system/<id>/eintrag`, `PATCH` und `DELETE /api/eintrag/<id>`, `GET /api/galaxy/<nr>`. Löschen einer Galaxie oder eines Systems löscht die darunterliegenden Daten mit (Datenbank-Kaskade).
-
-Die Suche und die Filter laufen komplett im Browser (JavaScript in `index.html`), damit sie ohne Verzögerung reagieren.
-
-## Technik
-
-Python mit Flask, SQLite, einfache HTML-Seiten mit etwas JavaScript. Läuft nur lokal am Mac mini (`127.0.0.1`), ohne Login. Export als JSON oder CSV zur Sicherung kommt in Schritt 5.
+| `app.py` | Flask server: all pages and the JSON API (`/api/...`) |
+| `templates/` | pages (HTML, CSS and JavaScript in one file each): `index` (grid), `galaxy`, `allianz`, `allianzen`, `hotg`, `suche`, `export`, `aufraeumen` |
+| `i18n.py`, `translations_en.py` | bilingual UI (see below) |
+| `check_translations.py` | checks that every UI text has an English translation |
+| `exporter.py` | backups (also used by the app) |
+| `init_db.py` | creates the database and imports the galaxies |
+| `hotg_import.py` | fetches the HotG hub list from the wiki |
+| `galaxien_quelle_a.csv` | the 256 galaxies (number, name, type) |
+| `hotg_hubs.csv` | snapshot of the hub list (rewritten on every update) |
+| `export_numbers.py` | optional: Numbers list → CSV |
+| `Dockerfile`, `docker-compose.yml` | Docker setup |
+| `start.command`, `stop.command`, `export.command` | macOS double-click helpers |
+| `NMS-Galaxie-Tracker-SPEC.md` | original specification (German) |
+| `README.de.md` | this README in German |
+
+Tech: Python + Flask, SQLite, plain HTML with a little JavaScript, no build step.
+
+## Translations and contributing
+
+The UI is bilingual. The German texts in the source are the keys: templates and code call `_('Deutscher Text')`, and `translations_en.py` maps each text to English (placeholders like `{n}` must match). JavaScript gets the same dictionary and its own `_()` (`templates/_js.html`). The language is chosen with the `lang` cookie (`/sprache/en`, `/sprache/de`).
+
+- Add or change a text: edit the template/code and the entry in `translations_en.py`, then run `python3 check_translations.py` (it fails on missing translations or mismatching placeholders).
+- Add another language: add a dictionary like `EN` and extend `i18n.py` (`SPRACHEN`, `_`, `js_woerterbuch`) and the switcher.
+- The source code (identifiers and comments) is in German, because it started as a personal tool. Translations of code comments are welcome.
+
+## Data sources and credits
+
+- Galaxy list (`galaxien_quelle_a.csv`): numbers and names of the 256 galaxies, originally read by OCR from a scanned list and checked against another list. Some spellings may be off; rename galaxies in the app.
+- HotG hubs: from the [NMS Fandom wiki](https://nomanssky.fandom.com/wiki/Hitchhikers_of_the_Galaxy) (text there is under [CC BY-SA](https://www.fandom.com/licensing)). The bundled `hotg_hubs.csv` is a snapshot; use "Update from Fandom" for the current state.
+- *No Man's Sky* is a trademark of Hello Games. This project is unofficial and not affiliated with Hello Games or the HotG community.
+
+## License
+
+[MIT](LICENSE)

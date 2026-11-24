@@ -1,6 +1,6 @@
-"""Holt die Liste „All HotG galactic hubs discovered so far“ direkt aus dem NMS-Fandom-Wiki
-(über die MediaWiki-API, die normale Seite ist für Skripte gesperrt) und schreibt sie in nms.db.
-Nur Standardbibliothek.   Im Terminal:  .venv/bin/python hotg_import.py"""
+"""Fetches the list "All HotG galactic hubs discovered so far" from the NMS Fandom wiki
+(via the MediaWiki API; the normal page blocks scripts) and stores it in nms.db.
+Standard library only.   From a terminal:  .venv/bin/python hotg_import.py"""
 import csv
 import json
 import re
@@ -23,13 +23,13 @@ def lade_wikitext():
         with urllib.request.urlopen(req, timeout=20) as r:
             return json.load(r)['parse']['wikitext']['*']
     except Exception as e:
-        raise ImportFehler(f'Wiki nicht erreichbar: {e}')
+        raise ImportFehler(f'{e}')
 
 
 def parse(wikitext):
     """Gibt die Hubs als Liste von Dicts zurück (Reihenfolge wie im Wiki)."""
     if ABSCHNITT not in wikitext:
-        raise ImportFehler('Abschnitt „All HotG galactic hubs“ im Wiki nicht gefunden (Seite umgebaut?).')
+        raise ImportFehler('section "All HotG galactic hubs" not found in the wiki page')
     abschnitt = wikitext.split(ABSCHNITT)[1].split('\n==')[0]
     entf = lambda t: re.sub(r'</?nowiki>', '', t).strip()
     hubs = []
@@ -47,7 +47,7 @@ def parse(wikitext):
             zugang='' if g else re.sub(r'\|\}\s*$', '', entf(zellen[3])).strip(),
             wiki_galaxie=re.sub(r'\[\[|\]\]|\s*\(\d+\)', '', zellen[1]).strip()))
     if len(hubs) < 20:
-        raise ImportFehler(f'Nur {len(hubs)} Hubs gefunden, das sieht nach einem Fehler aus. Nichts geändert.')
+        raise ImportFehler(f'only {len(hubs)} hubs found, looks wrong; nothing changed')
     return hubs
 
 
@@ -89,4 +89,4 @@ def aktualisieren(db_pfad='nms.db', csv_pfad='hotg_hubs.csv'):
 
 if __name__ == '__main__':
     neu, weg, geaendert, uebersprungen = aktualisieren()
-    print(f'Neu: {neu or "–"}  Entfernt: {weg or "–"}  Geändert: {geaendert or "–"}  Übersprungen: {uebersprungen or "–"}')
+    print(f'new: {neu or "-"}  removed: {weg or "-"}  changed: {geaendert or "-"}  skipped: {uebersprungen or "-"}')

@@ -12,6 +12,7 @@ from flask import (Flask, abort, g, jsonify, redirect, render_template, request,
                    send_from_directory, url_for)
 
 import hotg_import
+from i18n import SPRACHEN, _, js_woerterbuch, sprache
 from exporter import EXPORT_DIR, erstelle_export, liste_exporte
 
 # Einstellungen (Standard: nur lokal, Port 5050; 5000 ist am Mac von AirPlay belegt).
@@ -131,7 +132,7 @@ def hotg_aktualisieren():
     try:
         neu, weg, geaendert, uebersprungen = hotg_import.aktualisieren(DB, HOTG_CSV)
     except hotg_import.ImportFehler as e:
-        return jsonify(fehler=str(e)), 502
+        return jsonify(fehler=_('Wiki nicht erreichbar oder Seite umgebaut: {grund}', grund=e)), 502
     return jsonify(neu=neu, entfernt=weg, geaendert=geaendert, uebersprungen=uebersprungen)
 
 
@@ -174,7 +175,7 @@ def text_oder_none(wert):
 def pflicht_text(wert, feld):
     wert = text_oder_none(wert)
     if wert is None:
-        raise Eingabefehler(f'{feld} darf nicht leer sein.')
+        raise Eingabefehler(_('{feld} darf nicht leer sein.', feld=_(feld)))
     return wert
 
 
@@ -186,7 +187,7 @@ def pruefe_galaxy(feld, wert):
     if feld == 'typ':
         wert = text_oder_none(wert)
         if wert is not None and wert not in GALAXIE_TYPEN:
-            raise Eingabefehler('Unbekannter Typ.')
+            raise Eingabefehler(_('Unbekannter Typ.'))
         return wert
     if feld == 'bewertung':
         if wert in (None, ''):
@@ -194,13 +195,13 @@ def pruefe_galaxy(feld, wert):
         try:
             wert = int(wert)
         except (TypeError, ValueError):
-            raise Eingabefehler('Bewertung muss 1 bis 5 sein.')
+            raise Eingabefehler(_('Bewertung muss 1 bis 5 sein.'))
         if not 1 <= wert <= 5:
-            raise Eingabefehler('Bewertung muss 1 bis 5 sein.')
+            raise Eingabefehler(_('Bewertung muss 1 bis 5 sein.'))
         return wert
     if feld == 'besucht':
         return 1 if wert in (True, 1, '1', 'true') else 0
-    raise Eingabefehler(f'Feld {feld} ist nicht änderbar.')
+    raise Eingabefehler(_('Feld {feld} ist nicht änderbar.', feld=feld))
 
 
 LEBENSFORMEN = ('Gek', "Vy'keen", 'Korvax')
@@ -214,7 +215,7 @@ def pruefe_system(feld, wert):
     if feld == 'lebensform':
         wert = text_oder_none(wert)
         if wert is not None and wert not in LEBENSFORMEN:
-            raise Eingabefehler('Unbekannte Lebensform.')
+            raise Eingabefehler(_('Unbekannte Lebensform.'))
         return wert
     if feld in ('wealth', 'konflikt'):
         if wert in (None, ''):
@@ -222,11 +223,11 @@ def pruefe_system(feld, wert):
         try:
             wert = int(wert)
         except (TypeError, ValueError):
-            raise Eingabefehler('Wert muss 1 bis 3 sein.')
+            raise Eingabefehler(_('Wert muss 1 bis 3 sein.'))
         if not 1 <= wert <= 3:
-            raise Eingabefehler('Wert muss 1 bis 3 sein.')
+            raise Eingabefehler(_('Wert muss 1 bis 3 sein.'))
         return wert
-    raise Eingabefehler(f'Feld {feld} ist nicht änderbar.')
+    raise Eingabefehler(_('Feld {feld} ist nicht änderbar.', feld=feld))
 
 
 def pruefe_eintrag(feld, wert):
@@ -236,16 +237,16 @@ def pruefe_eintrag(feld, wert):
         return text_oder_none(wert)
     if feld == 'typ':
         if wert not in EINTRAG_TYPEN:
-            raise Eingabefehler('Unbekannter Eintragstyp.')
+            raise Eingabefehler(_('Unbekannter Eintragstyp.'))
         return wert
     if feld == 'allianz_id':
         if wert in (None, ''):
             return None
         row = db().execute('SELECT id FROM allianz WHERE id = ?', (wert,)).fetchone()
         if row is None:
-            raise Eingabefehler('Allianz gibt es nicht.')
+            raise Eingabefehler(_('Allianz gibt es nicht.'))
         return row['id']
-    raise Eingabefehler(f'Feld {feld} ist nicht änderbar.')
+    raise Eingabefehler(_('Feld {feld} ist nicht änderbar.', feld=feld))
 
 
 def aendern(tabelle, schluessel, wert_id, daten, pruefer):
@@ -254,7 +255,7 @@ def aendern(tabelle, schluessel, wert_id, daten, pruefer):
     if con.execute(f'SELECT 1 FROM {tabelle} WHERE {schluessel} = ?', (wert_id,)).fetchone() is None:
         abort(404)
     if not isinstance(daten, dict) or not daten:
-        raise Eingabefehler('Keine Daten.')
+        raise Eingabefehler(_('Keine Daten.'))
     felder = {feld: pruefer(feld, wert) for feld, wert in daten.items()}
     sets = ', '.join(f'{feld} = ?' for feld in felder)
     con.execute(f'UPDATE {tabelle} SET {sets} WHERE {schluessel} = ?', (*felder.values(), wert_id))
@@ -300,14 +301,14 @@ def galaxie_anlegen():
     try:
         nr = int(d.get('nr'))
     except (TypeError, ValueError):
-        raise Eingabefehler('Nummer fehlt oder ist keine Zahl.')
+        raise Eingabefehler(_('Nummer fehlt oder ist keine Zahl.'))
     if nr < 1:
-        raise Eingabefehler('Nummer muss größer als 0 sein.')
+        raise Eingabefehler(_('Nummer muss größer als 0 sein.'))
     name = pflicht_text(d.get('name'), 'Name')
     typ = pruefe_galaxy('typ', d.get('typ'))
     con = db()
     if con.execute('SELECT 1 FROM galaxy WHERE nr = ?', (nr,)).fetchone():
-        raise Eingabefehler(f'Galaxie {nr} gibt es schon.')
+        raise Eingabefehler(_('Galaxie {nr} gibt es schon.', nr=nr))
     con.execute('INSERT INTO galaxy (nr, name, typ) VALUES (?,?,?)', (nr, name, typ))
     con.commit()
     return jsonify(nr=nr), 201
@@ -334,7 +335,7 @@ def system_anlegen(nr):
     if con.execute('SELECT 1 FROM galaxy WHERE nr = ?', (nr,)).fetchone() is None:
         abort(404)
     d = request.get_json(silent=True) or {}
-    name = pflicht_text(d.get('name') or 'Neues System', 'Systemname')
+    name = pflicht_text(d.get('name') or _('Neues System'), 'Systemname')
     cur = con.execute('INSERT INTO system (galaxy_nr, name) VALUES (?,?)', (nr, name))
     con.commit()
     return jsonify(dict(con.execute('SELECT * FROM system WHERE id = ?', (cur.lastrowid,)).fetchone(),
@@ -363,7 +364,7 @@ def eintrag_anlegen(sid):
         abort(404)
     d = request.get_json(silent=True) or {}
     typ = pruefe_eintrag('typ', d.get('typ') or 'Basis')
-    name = pflicht_text(d.get('name') or 'Neuer Eintrag', 'Name')
+    name = pflicht_text(d.get('name') or _('Neuer Eintrag'), 'Name')
     allianz_id = pruefe_eintrag('allianz_id', d.get('allianz_id'))
     cur = con.execute('INSERT INTO eintrag (system_id, typ, name, allianz_id) VALUES (?,?,?,?)',
                       (sid, typ, name, allianz_id))
@@ -390,6 +391,22 @@ def eintrag_loeschen(eid):
 # Allianzen
 # ---------------------------------------------------------------------------
 @app.context_processor
+def sprache_fuer_alle_seiten():
+    """Stellt _() , die Sprache und das JS-Wörterbuch allen Seiten bereit."""
+    return dict(_=_, lang=sprache(), js_woerterbuch=js_woerterbuch())
+
+
+@app.route('/sprache/<code>')
+def sprache_waehlen(code):
+    if code not in SPRACHEN:
+        abort(404)
+    ziel = request.referrer or url_for('raster')
+    antwort = redirect(ziel)
+    antwort.set_cookie('lang', code, max_age=60 * 60 * 24 * 365, samesite='Lax')
+    return antwort
+
+
+@app.context_processor
 def eigene_allianz_fuer_alle_seiten():
     """Macht die eigene Allianz in allen Seiten verfügbar (fester Link in der Kopfzeile)."""
     row = db().execute('SELECT id, name FROM allianz WHERE eigene = 1 LIMIT 1').fetchone()
@@ -401,7 +418,7 @@ def pruefe_allianz(feld, wert):
         return pflicht_text(wert, 'Allianzname')
     if feld == 'notiz':
         return text_oder_none(wert)
-    raise Eingabefehler(f'Feld {feld} ist nicht änderbar.')
+    raise Eingabefehler(_('Feld {feld} ist nicht änderbar.', feld=feld))
 
 
 def allianz_komplett(aid):
@@ -486,7 +503,7 @@ def allianz_loeschen(aid):
     if row is None:
         abort(404)
     if row['eigene']:
-        raise Eingabefehler('Die eigene Allianz lässt sich nicht löschen. Lege zuerst eine andere als eigene fest.')
+        raise Eingabefehler(_('Die eigene Allianz lässt sich nicht löschen. Lege zuerst eine andere als eigene fest.'))
     con.execute('DELETE FROM allianz WHERE id = ?', (aid,))  # Einträge bleiben, allianz_id wird leer
     con.commit()
     return jsonify(geloescht=aid)
@@ -559,7 +576,7 @@ def suche(anfrage):
             LEFT JOIN allianz a ON a.id = e.allianz_id
             ORDER BY ga.nr, s.name COLLATE NOCASE, e.name COLLATE NOCASE"""):
         ok, wo = pruefe([('Name', r['name']), ('Planet', r['planet']), ('Notiz', r['notiz']),
-                         ('Typ', r['typ']), ('Allianz', r['allianz'])])
+                         ('Typ', r['typ'] + ' ' + _(r['typ'])), ('Allianz', r['allianz'])])
         if ok:
             ergebnisse.append(dict(art='eintrag', id=r['id'], galaxy_nr=r['nr'], galaxy_name=r['galaxy_name'],
                                    galaxy_klasse=TYP_KLASSE.get(r['galaxy_typ'], 'ohne-typ'),
@@ -655,7 +672,7 @@ def export_erstellen():
     try:
         return jsonify(erstelle_export(DB, EXPORT_DIR)), 201
     except (OSError, sqlite3.Error) as e:
-        return jsonify(fehler=f'Export fehlgeschlagen: {e}'), 500
+        return jsonify(fehler=_('Export fehlgeschlagen: {grund}', grund=e)), 500
 
 
 @app.route('/export/datei/<ordner>/<datei>')

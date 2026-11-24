@@ -1,10 +1,10 @@
-"""Legt nms.db an und importiert die Galaxien (Quelle A + Numbers-Liste).
-Aufruf: python init_db.py                      (bricht ab, wenn die Datenbank schon existiert)
-        python init_db.py --neu                (löscht die Datenbank und baut sie neu auf)
-        python init_db.py --allianz "Meine ABC" (Name der eigenen Allianz, Standard: "Meine Allianz")
-Quelle B (galaxie_numbers.csv, eigene Numbers-Liste) ist optional: Fehlt die Datei, starten alle
-Galaxien als „nicht besucht“. Der Datenbankpfad lässt sich mit der Umgebungsvariable NMS_DB ändern.
-Nur Standardbibliothek."""
+"""Creates nms.db and imports the galaxies (source A + optional Numbers list).
+Usage: python init_db.py                       (aborts if the database already exists)
+       python init_db.py --neu                 (deletes the database and rebuilds it)
+       python init_db.py --allianz "My ABC"    (name of your own alliance, default: "My Alliance")
+Source B (galaxie_numbers.csv, your own Numbers list) is optional: if the file is missing, all
+galaxies start as "not visited". The database path can be changed with the NMS_DB environment variable.
+Standard library only."""
 import csv, os, sqlite3, sys
 
 DB = os.environ.get('NMS_DB', 'nms.db')
@@ -61,10 +61,10 @@ def main(db=None, allianz=None, still=False):
     """Baut die Datenbank auf. db und allianz überschreiben Voreinstellung bzw. Kommandozeile."""
     db = db or DB
     if allianz is None:
-        allianz = sys.argv[sys.argv.index('--allianz') + 1] if '--allianz' in sys.argv else 'Meine Allianz'
+        allianz = sys.argv[sys.argv.index('--allianz') + 1] if '--allianz' in sys.argv else 'My Alliance'
     if os.path.exists(db):
         if '--neu' not in sys.argv:
-            sys.exit(f'{db} existiert schon. Mit --neu neu aufbauen (löscht alle Daten!).')
+            sys.exit(f'{db} already exists. Use --neu to rebuild it (deletes all data!).')
         os.remove(db)
     ordner = os.path.dirname(db)
     if ordner:
@@ -131,14 +131,14 @@ def main(db=None, allianz=None, still=False):
         return
     # Kontrolle
     z = lambda sql: con.execute(sql).fetchone()[0]
-    print(f"Galaxien: {z('SELECT COUNT(*) FROM galaxy')}, besucht: {z('SELECT SUM(besucht) FROM galaxy')}, "
-          f"mit Notiz: {z('SELECT COUNT(*) FROM galaxy WHERE notiz IS NOT NULL')}, "
-          f"ohne Typ: {z('SELECT COUNT(*) FROM galaxy WHERE typ IS NULL')}")
-    print('Allianz:', con.execute('SELECT name, eigene FROM allianz').fetchall())
-    print('\nAbweichungen Numbers <-> Quelle A:')
+    print(f"Galaxies: {z('SELECT COUNT(*) FROM galaxy')}, visited: {z('SELECT SUM(besucht) FROM galaxy')}, "
+          f"with note: {z('SELECT COUNT(*) FROM galaxy WHERE notiz IS NOT NULL')}, "
+          f"without type: {z('SELECT COUNT(*) FROM galaxy WHERE typ IS NULL')}")
+    print('Alliance:', con.execute('SELECT name, eigene FROM allianz').fetchall())
+    print('\nDifferences Numbers <-> source A:')
     for x in abweichungen:
         print(' ', x)
-    print('\nIn Numbers, aber nicht in Quelle A:', nicht_in_a or 'keine')
+    print('\nIn Numbers but not in source A:', nicht_in_a or 'none')
     con.close()
 
 

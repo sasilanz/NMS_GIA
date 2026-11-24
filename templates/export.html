@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="de">
+<html lang="{{ lang }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sicherung</title>
+<title>{{ _('Sicherung') }}</title>
 <style>
   :root { --bg: #1c1d22; --panel: #26272e; --panel2: #2f3039; --text: #f2f2f2; --muted: #9a9ca6; --line: #3a3b44;
           --besucht: {{ farben.besucht }}; --gelb: #ffd54a; }
@@ -36,20 +36,19 @@
 </head>
 <body>
 <div class="leiste">
-  <a href="/">← Raster</a>
-  <a href="/suche" title="In allem suchen">🔍 Suche</a>
+  <a href="/">← {{ _('Raster') }}</a>
+  <a href="/suche" title="{{ _('In allem suchen') }}">🔍 {{ _('Suche') }}</a>
   {% if eigene_allianz %}<a href="/allianz" style="border-color:#ffd54a; color:#ffd54a">★ {{ eigene_allianz.name }}</a>{% endif %}
+  {% include '_sprache.html' %}
 </div>
 <main>
-  <h1>Sicherung</h1>
-  <p class="muted">Jeder Export ist eine vollständige Kopie deiner Daten in einem eigenen Ordner mit Datum und Uhrzeit.
-     Er enthält die Datenbank (<code>nms.db</code>), alles als <code>nms.json</code> und vier CSV-Dateien für Numbers oder Excel.
-     Alte Exporte bleiben erhalten und werden nie automatisch gelöscht.</p>
-  <p><button class="knopf" id="los">Jetzt sichern</button></p>
+  <h1>{{ _('Sicherung') }}</h1>
+  <p class="muted">{{ _('Jeder Export ist eine vollständige Kopie deiner Daten in einem eigenen Ordner mit Datum und Uhrzeit. Er enthält die Datenbank (nms.db), alles als nms.json und vier CSV-Dateien für Numbers oder Excel. Alte Exporte bleiben erhalten und werden nie automatisch gelöscht.') }}</p>
+  <p><button class="knopf" id="los">{{ _('Jetzt sichern') }}</button></p>
   <div id="meldung"></div>
 
   <div id="neu"></div>
-  <h2 style="font-size:20px">Vorhandene Exporte</h2>
+  <h2 style="font-size:20px">{{ _('Vorhandene Exporte') }}</h2>
   {% if exporte %}
     {% for e in exporte %}
     <div class="export">
@@ -61,19 +60,20 @@
     </div>
     {% endfor %}
   {% else %}
-    <p class="muted">Noch kein Export vorhanden.</p>
+    <p class="muted">{{ _('Noch kein Export vorhanden.') }}</p>
   {% endif %}
 </main>
 <script>
+{% include '_js.html' %}
 document.getElementById('los').addEventListener('click', async ev => {
   const knopf = ev.currentTarget, m = document.getElementById('meldung');
-  knopf.disabled = true; m.className = ''; m.textContent = 'sichert …';
+  knopf.disabled = true; m.className = ''; m.textContent = _('sichert …');
   try {
     const r = await fetch('/api/export', { method: 'POST' });
     const j = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(j.fehler || ('Fehler ' + r.status));
+    if (!r.ok) throw new Error(j.fehler || (_('Fehler') + ' ' + r.status));
     m.className = 'ok';
-    m.textContent = '✓ Gesichert in ' + j.pfad + ' (' + Object.entries(j.anzahl).map(([t, n]) => n + ' ' + t).join(', ') + ')';
+    m.textContent = '✓ ' + _('Gesichert in') + ' ' + j.pfad + ' (' + Object.entries(j.anzahl).map(([t, n]) => n + ' ' + t).join(', ') + ')';
     setTimeout(() => location.reload(), 1800);
   } catch (e) { m.className = 'fehler'; m.textContent = '⚠ ' + e.message; knopf.disabled = false; }
 });
